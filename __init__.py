@@ -510,7 +510,7 @@ async def api_folders_manage(request):
         return _json(G.folder_add(data.get("folder", ""), data.get("items", [])))
     if action == "remove":
         return _json(G.folder_remove(data.get("folder", ""), data.get("items", [])))
-    return _json({"ok": False, "error": "未知操作"}, 400)
+    return _json({"ok": False, "error": "不明な操作です"}, 400)
 
 
 @PromptServer.instance.routes.get(P + "/api/fs/drives")
@@ -535,9 +535,9 @@ async def api_fs_mkdir(request):
     parent = (data.get("path") or "").strip()
     name = (data.get("name") or "").strip()
     if not parent or not name:
-        return _json({"error": "缺少路径或名称"}, 400)
+        return _json({"error": "パスまたは名前が不足しています"}, 400)
     if not os.path.isdir(parent):
-        return _json({"error": "父目录不存在"}, 400)
+        return _json({"error": "親フォルダが存在しません"}, 400)
     name = name.replace("\\", "/").replace("/", "")
     if not name:
         return _json({"error": "名称无效"}, 400)

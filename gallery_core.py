@@ -73,7 +73,7 @@ def save_settings(webui_root=None, extra=None):
     if root is not None:
         root = str(root).strip()
         if root and not os.path.isdir(root):
-            return {"ok": False, "error": "目录不存在: %s" % root}
+            return {"ok": False, "error": "フォルダが存在しません: %s" % root}
         cur["webui_root"] = root
     for k, v in data.items():
         if v is None:
@@ -761,7 +761,7 @@ def start_scan(source, force=False, refresh=False):
         parser = _parser_webui
         exts = IMAGE_EXTS
     if not root:
-        return {"ok": False, "error": "来源目录不可用"}
+        return {"ok": False, "error": "ソースフォルダを利用できません"}
     if force:
         fp = _index_file(source)
         if os.path.exists(fp):
@@ -1670,10 +1670,10 @@ def folder_list():
 def folder_create(name):
     name = (name or "").strip()
     if not name:
-        return {"ok": False, "error": "名称不能为空"}
+        return {"ok": False, "error": "名前を入力してください"}
     data = load_folders()
     if name in data:
-        return {"ok": False, "error": "收藏夹已存在"}
+        return {"ok": False, "error": "同名のお気に入りフォルダが既にあります"}
     data[name] = []
     save_folders(data)
     return {"ok": True, "folders": folder_list()}
@@ -1768,7 +1768,7 @@ def chain_fav_save(entry):
     lst = load_artist_chains()
     name = (entry.get("name") or "").strip()
     if not name:
-        return {"ok": False, "error": "名称不能为空"}
+        return {"ok": False, "error": "名前を入力してください"}
     arts = [str(x) for x in (entry.get("artists") or []) if str(x).strip()]
     weights = entry.get("weights") or {}
     added = [str(x) for x in (entry.get("added") or []) if str(x).strip()]
@@ -1868,11 +1868,11 @@ def list_drives():
 def list_dir(path):
     path = os.path.normpath(path or "")
     if not os.path.isdir(path):
-        return {"error": "目录不存在: %s" % path}
+        return {"error": "フォルダが存在しません: %s" % path}
     try:
         dirs = sorted([d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))])
     except PermissionError:
-        return {"error": "无权限访问"}
+        return {"error": "アクセス権限がありません"}
     parent = os.path.dirname(path)
     if parent == path:
         parent = None
