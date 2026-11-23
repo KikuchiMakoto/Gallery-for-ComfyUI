@@ -447,7 +447,7 @@ async def api_boot(request):
     """进入图库：按设置 scan_mode 分流——incremental（默认）秒开+后台补新增；full（选项）才全量重建。"""
     results = {}
     full = (G.load_settings().get("scan_mode") or "incremental") == "full"
-    for src in ("comfyui", "webui"):
+    for src in ("comfyui",):
         results[src] = G.start_scan(src, force=full, refresh=not full)
     return _json({"ok": True, "booted": results, "scan_mode": "full" if full else "incremental"})
 

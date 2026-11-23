@@ -1099,8 +1099,8 @@ def _lora_roots(source):
 
 
 def stats():
-    out = {"comfyui": {"total": 0, "models": []}, "webui": {"total": 0, "models": []}}
-    for src in ("comfyui", "webui"):
+    out = {"comfyui": {"total": 0, "models": []}}
+    for src in ("comfyui",):
         entries, ready = get_index(src)
         out[src]["total"] = len(entries) if ready else 0
         out[src]["ready"] = ready

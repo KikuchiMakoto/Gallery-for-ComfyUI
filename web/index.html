@@ -57,7 +57,7 @@
   .adv .f label{display:block; font-size:12px; color:var(--dim); margin-bottom:3px}
   .adv .f input, .adv .f select{width:110px}
   .wrap{max-width:1320px; margin:0 auto; padding:12px 16px 60px}
-  .grid{display:grid; gap:10px; transition:all .2s}
+  .grid{display:grid; gap:10px; transition:all .2s; align-items:start}
   .grid.sm{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   .grid.md{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
   .grid.lg{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
@@ -66,7 +66,7 @@
   .grid, .grid .item, .grid img{user-select:none;-webkit-user-select:none}
 .grid img{-webkit-user-drag:none;user-drag:none}
 .item.sel{outline:2px solid var(--accent); outline-offset:-2px}
-  .item img{width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:#ddd}
+  .item img{width:100%; height:auto; display:block; background:#ddd}
   .item video{width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#000}
   .item .media-note{position:absolute; right:8px; bottom:34px; font-size:10px; color:#fff; background:rgba(0,0,0,.6); padding:1px 6px; border-radius:5px}
   .item .meta{padding:6px 8px}
@@ -74,8 +74,9 @@
   .item .sub{font-size:11.5px; color:var(--dim); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .item .favmark{position:absolute; top:6px; right:8px; color:var(--star); font-size:15px; text-shadow:0 1px 3px rgba(0,0,0,.5); display:none}
   .item.faved .favmark{display:block}
-  .item .delrow{display:flex; justify-content:flex-end; margin-top:4px}
-  .item .delbtn{border:none; border-radius:6px; background:#c62828; color:#fff; font-size:12.5px; line-height:1; cursor:pointer; padding:5px 10px; opacity:.92}
+  .item .fnamerow{display:flex; align-items:center; gap:6px}
+  .item .fnamerow .fname{flex:1; min-width:0}
+  .item .delbtn{flex:none; border:none; border-radius:6px; background:#c62828; color:#fff; font-size:12.5px; line-height:1; cursor:pointer; padding:5px 10px; opacity:.92}
   .item .delbtn:hover{opacity:1; background:#e53935}
   .item .badge{position:absolute; left:6px; top:6px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 7px; border-radius:6px; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .empty{grid-column:1/-1; text-align:center; color:var(--dim); padding:44px 0}
@@ -219,6 +220,8 @@
   .modal .btns button:hover{border-color:var(--accent); color:var(--accent)}
   .modal .btns button.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
   .modal .btns button.primary:hover{opacity:.9; color:#fff}
+  .modal .btns button.delbtn{background:#c62828; border-color:#c62828; color:#fff}
+  .modal .btns button.delbtn:hover{background:#e53935; border-color:#e53935; color:#fff}
   .modal .close{position:absolute; top:14px; right:20px; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.14); color:#fff; font-size:17px; cursor:pointer; z-index:6; display:flex; align-items:center; justify-content:center; line-height:1; backdrop-filter:blur(4px); transition:.15s}
   .modal .close:hover{background:rgba(255,255,255,.28)}
   .modal .nav{position:absolute; top:50%; transform:translateY(-50%); width:42px; height:56px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.07); color:rgba(255,255,255,.85); cursor:pointer; font-size:26px; user-select:none; z-index:5; border-radius:10px; transition:.15s}
@@ -475,8 +478,6 @@
     <span class="ver-tag" data-i18n-title="verTitle" title="Ctrl+F5 で強制リロードすると v1.3.4 と表示されます">v1.3.4</span>
     <div class="srctabs">
       <button class="srctab on" data-src="comfyui" data-i18n="tabComfy">ComfyUI</button>
-      <button class="srctab" data-src="webui" data-i18n="tabWebui">WebUI</button>
-      <button class="srctab" data-src="video" data-i18n="tabVideo">🎬 動画</button>
       <button class="srctab" data-src="artist" data-i18n="tabArtist">🎨 絵師</button>
       <button class="srctab" data-src="artlib" data-i18n="tabArtlib">🌐 絵師DB</button>
       <button class="srctab" data-src="fav" data-i18n="tabFav">⭐ お気に入り</button>
@@ -497,8 +498,6 @@
     <button class="iconbtn" id="btnStats" data-i18n-title="titleStats" title="📊">📊</button>
     <button class="iconbtn" id="btnQuickRefresh" data-i18n="quickRefresh" data-i18n-title="titleQuickRefresh" title="↻ 新しい画像だけチェック（再入場時と同じ）">↻ 新規チェック</button>
     <button class="iconbtn" id="btnRefreshComfy" data-i18n="refreshComfy" title="ComfyUI インデックスを強制再構築">🔄 ComfyUI</button>
-    <button class="iconbtn" id="btnRefreshWebui" data-i18n="refreshWebui" title="WebUI インデックスを強制再構築">🔄 WebUI</button>
-    <button class="iconbtn" id="btnRefreshVideo" data-i18n="refreshVideo" title="動画インデックスを強制再構築">🔄 🎬</button>
     <button class="iconbtn" id="btnFav" data-i18n-title="titleFav" title="★">★</button>
     <button class="iconbtn" id="btnTheme" data-i18n-title="titleTheme" title="🌗">🌗</button>
     <button class="iconbtn" id="btnLang" data-i18n-title="titleLang" title="EN">EN</button>
@@ -840,14 +839,7 @@
 <!-- 设置 -->
 <div class="setup" id="setup">
   <div class="card">
-    <h3 data-i18n="setupTitle">Stable Diffusion WebUI 設定</h3>
-    <p data-i18n="setupDesc">ギャラリーの「WebUI」ソースは、SD WebUI の <b>outputs</b> フォルダ（生成画像）と <b>models</b> フォルダ（モデル）を読みます。
-       参照ボタンから、SD WebUI のインストール先ルートフォルダ（通常は <b>outputs</b> フォルダのある階層）を選んでください。
-       設定しなくても ComfyUI ギャラリーは通常通り使え、後からいつでも変更できます。</p>
-    <div class="row">
-      <input id="setupPath" type="text" readonly data-i18n-ph="setupPathPh" placeholder="フォルダ未選択">
-      <button class="iconbtn" id="btnBrowse" data-i18n="browse">📁 参照…</button>
-    </div>
+    <h3 data-i18n="setupTitle">設定</h3>
     <div class="row" style="flex-wrap:wrap; gap:6px">
       <label for="setupAf" data-i18n="afLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim); display:flex; align-items:center">絵師チェーン形式</label>
       <select id="setupAf" style="flex:1; min-width:200px; padding:5px 8px; border-radius:6px; background:var(--card); color:var(--txt); border:1px solid var(--line)">
@@ -923,6 +915,7 @@
         <button id="mMeta" data-i18n="modalMeta">📄 PNG情報</button>
         <button id="mOpen" data-i18n="modalOpen">↗ 原寸</button>
         <button id="mOpenFolder" data-i18n="modalOpenFolder">📂 保存場所</button>
+        <button id="mDel" class="delbtn">🗑 削除</button>
       </div>
     </div>
   </div>
@@ -991,7 +984,7 @@ const I18N = {
     titleSetup: "設定 / Settings", titleFs: "全画面表示 / Fullscreen",
     toastAdded: "✅ 追加しました：「", toastRemoved: "外しました：「", toastCopyOk: "プロンプトをコピーしました", toastImgCopyOk: "画像をコピーしました",
     toastImgCopyFail: "画像のコピーに失敗しました", toastFolderExists: "そのフォルダは既にあります", toastFolderEmpty: "名前を入力してください",
-    setupTitle: "Stable Diffusion WebUI 設定",
+    setupTitle: "設定",
     afLabel: "絵師チェーン形式",
     chainTitle: "絵師チェーンのお気に入り",
     chainFav: "★ この絵師チェーンをお気に入り",
@@ -1087,7 +1080,7 @@ const I18N = {
     titleSetup: "Settings / 設定", titleFs: "Fullscreen / 全画面表示",
     toastAdded: "✅ Added to 「", toastRemoved: "Removed from 「", toastCopyOk: "Prompt copied", toastImgCopyOk: "Image copied",
     toastImgCopyFail: "Copy image failed", toastFolderExists: "Folder already exists", toastFolderEmpty: "Name cannot be empty",
-    setupTitle: "Stable Diffusion WebUI Settings",
+    setupTitle: "Settings",
     afLabel: "Artist string format",
     chainTitle: "Saved chains",
     chainFav: "★ Save this chain",
@@ -1251,7 +1244,7 @@ let SRC = "comfyui", PAGE = 1, PAGE_SIZE = 60, LOADING = false, TOTAL = 0, TOTAL
 // 灯箱续翻拿到的顺序就和网格不同 —— 网格里点 A，打开的是 B。
 let RAND_SEED = Math.floor(Math.random() * 2000000000) + 1;
 function reshuffle(){ RAND_SEED = Math.floor(Math.random() * 2000000000) + 1; return RAND_SEED; }
-let CUR_ITEMS = [], CUR_IDX = -1, DEFAULT_FAVS = new Set(), CFG_WEBUI = false;
+let CUR_ITEMS = [], CUR_IDX = -1, DEFAULT_FAVS = new Set();
 // 灯箱自己持有一份「窗口 / 来源 / 下标」：这样从「画师」「画师库」右键打开大图时，
 // 不会打乱图库当前页的 CUR_ITEMS / CUR_IDX 状态。
 let LB_ITEMS = [], LB_IDX = -1, LB_SRC = "comfyui";
@@ -1413,7 +1406,7 @@ document.querySelectorAll(".srctab").forEach(b=>{
     SEL.clear(); $("selBar").hidden = true;
     $("favGrid").querySelectorAll(".item.sel").forEach(d=>d.classList.remove("sel"));
     SRC = b.dataset.src;
-    $("srcLabel").textContent = SRC === "comfyui" ? t("subComfy") : SRC === "video" ? t("tabVideo") : t("subWebui");
+    $("srcLabel").textContent = t("subComfy");
     $("modelSel").value = ""; $("samplerSel").value = "";
     $("btnFav").classList.remove("active");
     refreshSource();
@@ -1481,13 +1474,6 @@ function mainLbCtx(){
 async function load(reset){
   if(reset){ PAGE = 1; $("grid").innerHTML = '<div class="empty">' + t("loading") + '</div>'; }
   if(LOADING) return;
-  // WebUI 源未配置：直接提示，不死循环
-  if(SRC === "webui" && !CFG_WEBUI){
-    $("grid").innerHTML = '<div class="empty">' + t("notCfgWebui") + '<br><br>' + t("noCfgHint") + '</div>';
-    $("loading").textContent = "";
-    renderPager();
-    return;
-  }
   LOADING = true; $("loading").textContent = "";
   try{
     const r = await api("/api/gallery?" + galleryParams(PAGE).toString());
@@ -1529,7 +1515,13 @@ function mkItem(it, src, items, ctx){
   const fname = document.createElement("div"); fname.className = "fname"; fname.textContent = it.file;
   const sub = document.createElement("div"); sub.className = "sub";
   sub.textContent = [isVideo ? "🎬" : "", p2.steps?`${p2.steps}${t("unitSteps")}`:"", p2.width&&p2.height?`${p2.width}×${p2.height}`:"", p2.sampler||""].filter(Boolean).join(" · ");
-  meta.appendChild(fname); meta.appendChild(sub);
+  const fnamerow = document.createElement("div"); fnamerow.className = "fnamerow";
+  fnamerow.appendChild(fname);
+  const del = document.createElement("button");
+  del.className = "delbtn"; del.type = "button"; del.textContent = "🗑 " + t("delBtn"); del.title = t("delBtn");
+  del.onclick = e=>{ e.stopPropagation(); delImage(src, it.file, d); };
+  fnamerow.appendChild(del);
+  meta.appendChild(fnamerow); meta.appendChild(sub);
   // 画师：一张图用了多个画师时全部列出
   const arts = Array.isArray(it.artists) ? it.artists.filter(Boolean) : [];
   if(arts.length){
@@ -1541,11 +1533,6 @@ function mkItem(it, src, items, ctx){
   }
   const fm = document.createElement("span"); fm.className = "favmark"; fm.textContent = "★";
   d.appendChild(badge); d.appendChild(media); d.appendChild(meta); d.appendChild(fm);
-  const delrow = document.createElement("div"); delrow.className = "delrow";
-  const del = document.createElement("button");
-  del.className = "delbtn"; del.type = "button"; del.textContent = "🗑 " + t("delBtn"); del.title = t("delBtn");
-  del.onclick = e=>{ e.stopPropagation(); delImage(src, it.file, d); };
-  delrow.appendChild(del); meta.appendChild(delrow);
   d.onclick = ()=>{
     if(SEL.size){ toggleSel(d, it, src); updateSelBars(); return; }
     const list = items || CUR_ITEMS;
@@ -1717,7 +1704,7 @@ async function loadStats(){
   try{
     const r = await api("/api/stats");
     const st = r[SRC] || {};
-    $("statSrc").textContent = SRC === "webui" ? t("subWebui") : t("subComfy");
+    $("statSrc").textContent = t("subComfy");
     $("statTotal").textContent = st.total || 0;
     const bars = $("statBars"); bars.innerHTML = "";
     const max = Math.max(1, ...(st.models||[]).map(m=>m.count));
@@ -1745,15 +1732,14 @@ document.addEventListener("click", (e)=>{
 // 面板内点击不关闭（用 stopPropagation 控制，除非选择 lora）
 $("loraTree").onclick = (e)=> e.stopPropagation();
 
-// ---------- 一键刷新索引（区分 ComfyUI / WebUI 两个源，默认强制全量重建） ----------
+// ---------- 一键刷新索引（ComfyUI 源，默认强制全量重建） ----------
 let _refreshTimer = null;
 async function refreshIndex(source, force){
-  const btnId = source === "comfyui" ? "btnRefreshComfy" : source === "video" ? "btnRefreshVideo" : "btnRefreshWebui";
-  const btn = $(btnId);
+  const btn = $("btnRefreshComfy");
   btn.style.pointerEvents = "none"; btn.style.opacity = "0.5";
   $("indexBar").hidden = false;
   $("indexFill").style.width = "0%";
-  const srcName = source === "comfyui" ? "ComfyUI" : source === "video" ? t("videoWord") : "WebUI";
+  const srcName = "ComfyUI";
   $("indexText").textContent = (force ? (LANG === "ja" ? "📊 " + srcName + " のインデックスを再構築中：" : "📊 Rebuilding " + srcName + ": ") : t("indexBuilding")) + "0%";
   const scanParam = force ? "force=1" : "refresh=1";
   try{
@@ -1796,8 +1782,6 @@ async function refreshIndex(source, force){
   }
 }
 $("btnRefreshComfy").onclick = ()=>refreshIndex("comfyui", true);
-$("btnRefreshWebui").onclick = ()=>refreshIndex("webui", true);
-$("btnRefreshVideo").onclick = ()=>refreshIndex("video", true);
 
 // ---------- 小刷新：只检查新增（与"重进页面"走的同一条增量路径）----------
 let _quickTimer = null;
@@ -1815,24 +1799,21 @@ async function quickRefresh(){
   const t0 = Date.now();
   try{
     // 显式 refresh=1（增量）：旧图走缓存零重解析，只解析新增/变更的文件
-    await Promise.allSettled([
-      api("/api/scan?source=comfyui&refresh=1"),
-      api("/api/scan?source=webui&refresh=1"),
-    ]);
+    await api("/api/scan?source=comfyui&refresh=1");
     if(_quickTimer) clearInterval(_quickTimer);
     _quickTimer = setInterval(async ()=>{
       try{
         const st = await api("/api/status");
-        const c = st.comfyui || {}, w = st.webui || {};
-        // 只等"当前正在看的源"扫完就刷新（不用陪着另一个源（如 2.6 万张的 WebUI）干等）
-        const key = (SRC === "comfyui" || SRC === "webui" || SRC === "video") ? SRC : null;
+        const c = st.comfyui || {};
+        // 只等当前源（ComfyUI）扫完就刷新
+        const key = SRC === "comfyui" ? SRC : null;
         const mine = key ? (st[key] || {}) : null;
-        const busy = mine ? !!mine.busy : (!!c.busy || !!w.busy);
+        const busy = mine ? !!mine.busy : !!c.busy;
         const notReady = mine ? (!mine.ready && mine.total > 0)
-                              : ((!c.ready && c.total > 0) || (!w.ready && w.total > 0));
+                              : (!c.ready && c.total > 0);
         if((busy || notReady) && Date.now() - t0 < 300000){    // 最多等 5 分钟
-          const total = (c.total || 0) + (w.total || 0);
-          const scanned = (c.scanned || 0) + (w.scanned || 0);
+          const total = (c.total || 0);
+          const scanned = (c.scanned || 0);
           const pct = total ? Math.round(scanned / total * 100) : 0;
           $("indexBar").hidden = false; $("indexFill").style.width = pct + "%";
           $("indexText").textContent = `${t("indexBuilding")}${scanned}/${total} (${pct}%)`;
@@ -2151,7 +2132,7 @@ async function loadFavGrid(reset){
       // 画师串模式：该串成员画师的本地图片（封面即来自这里）
       const names = (chain.artists || []).map(n=>n.toLowerCase().replace(/ /g, "_"));
       const seen = {};
-      for(const src of ["comfyui", "webui"]){
+      for(const src of ["comfyui"]){
         for(const nm of names){
           if(!nm || seen[nm]) continue;
           try{
@@ -2501,6 +2482,7 @@ function openLightbox(idx){
     $("mimg").src = imgUrl(lbSrcOf(it), it.file);
   }
   $("mfile").textContent = it.file;
+  $("mDel").textContent = "🗑 " + t("delBtn");
   $("mimgName").textContent = it.file.split("/").pop();
   LB_CUR_FILE = it.file || "";
   // 计数改成全局序号，才看得出「一直翻」翻到哪儿了
@@ -2607,30 +2589,66 @@ $("mMeta").onclick = async ()=>{
 };
 $("mOpen").onclick = ()=>{ const it = LB_ITEMS[LB_IDX]; if(it) window.open(imgUrl(lbSrcOf(it), it.file), "_blank"); };
 $("mOpenFolder").onclick = async ()=>{ const it = LB_ITEMS[LB_IDX]; if(!it) return; const r = await api(`/api/image/open-folder?source=${lbSrcOf(it)}&file=${encodeURIComponent(it.file)}`); if(!r.ok) showToast(r.error || t("openFolderFail")); };
+$("mDel").onclick = ()=>lbDelete();
+async function lbDelete(){
+  const it = LB_ITEMS[LB_IDX]; if(!it) return;
+  if(!confirm(t("delConfirm"))) return;
+  const src = lbSrcOf(it), file = it.file;
+  try{
+    const r = await api("/api/delete", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({source: src, file})});
+    if(!r.ok) throw new Error("failed");
+  }catch(e){ showToast("⚠ " + t("delFail")); return; }
+  showToast("🗑 " + t("delDone"));
+  // 网格里对应的卡片一并移除（主网格 / 收藏网格通用）
+  document.querySelectorAll(`.item[data-file="${CSS.escape(file)}"]`).forEach(el=>el.remove());
+  const g = LB_GIDX;
+  if(LB_CTX){
+    // 页缓存：删掉所在页的那一条，并丢弃其后的页（全局序号整体前移，旧缓存会错位）
+    const p = Math.floor(g / LB_PSIZE) + 1, within = g - (p - 1) * LB_PSIZE;
+    const pg = LB_CACHE.get(p);
+    if(pg && pg[within] && pg[within].file === file) pg.splice(within, 1);
+    [...LB_CACHE.keys()].forEach(q=>{ if(q > p) LB_CACHE.delete(q); });
+    LB_TOTAL = Math.max(0, LB_TOTAL - 1);
+    LB_CTX.total = LB_TOTAL;
+    // 收藏页的本地全量列表也要同步删（loader 是从它切片的）
+    const fi = LB_FAV_ALL.findIndex(x=>x && x.file === file && (x.source || "comfyui") === src);
+    if(fi >= 0) LB_FAV_ALL.splice(fi, 1);
+    if(LB_TOTAL <= 0){ lbClose(); return; }
+    await lbShow(Math.min(g, LB_TOTAL - 1));
+    // 底层网格从服务端重拉当前页，总数 / 分页以服务端为准
+    if(LB_CTX.grid === "grid") load(false);
+    else if(LB_CTX.grid === "favGrid") loadFavGrid(false);
+  } else {
+    const wasMain = (LB_ITEMS === CUR_ITEMS);
+    LB_ITEMS.splice(LB_IDX, 1);
+    LB_TOTAL = LB_ITEMS.length;
+    if(wasMain && TOTAL > 0){
+      TOTAL--; TOTAL_PAGES = Math.max(1, Math.ceil(TOTAL / PAGE_SIZE));
+      $("count").textContent = (t("countTotal") ? t("countTotal") + " " : "") + TOTAL + (t("countOf") ? " " + t("countOf") : "");
+      renderPager();
+    }
+    if(!LB_ITEMS.length){ lbClose(); return; }
+    LB_GIDX = Math.min(LB_IDX, LB_ITEMS.length - 1);
+    LB_IDX = LB_GIDX;
+    openLightbox(LB_IDX);
+  }
+}
 
 // ---------- 设置 & 目录选择 ----------
 async function checkSettings(){
   const s = await api("/api/settings");
-  CFG_WEBUI = !!s.configured;
-  $("setupPath").value = s.webui_root || "";
   SET_AF = s.artist_format || "anima";
   const sel = $("setupAf"); if(sel){ sel.value = SET_AF; }
   updateAfPreview();
   const selScan = $("setupScan"); if(selScan){ selScan.value = s.scan_mode || "incremental"; }
-  if(!s.configured){
-    $("setup").classList.add("show");
-    boot();   // 未配置也先启动（ComfyUI 源可用），设置框叠在上面
-    return;
-  }
-  boot();     // 已配置：直接启动
+  boot();
 }
 $("btnSetup").onclick = ()=>$("setup").classList.add("show");
-$("btnSetupSkip").onclick = ()=>{ CFG_WEBUI = false; $("setup").classList.remove("show"); if(!BOOTED) boot(); };
+$("btnSetupSkip").onclick = ()=>{ $("setup").classList.remove("show"); if(!BOOTED) boot(); };
 $("btnSetupSave").onclick = async ()=>{
-  const r = await api("/api/settings", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({webui_root: $("setupPath").value, artist_format: $("setupAf").value, scan_mode: $("setupScan").value})});
+  const r = await api("/api/settings", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({artist_format: $("setupAf").value, scan_mode: $("setupScan").value})});
   const msg = $("setupMsg");
   if(r.ok){
-    CFG_WEBUI = true;
     msg.textContent = t("setupSaved"); msg.className = "msg ok";
     setTimeout(()=>{ $("setup").classList.remove("show"); if(!BOOTED) boot(); else { refreshSource(); } }, 500);
   }
@@ -2673,7 +2691,7 @@ async function fsEnter(path){
   });
   if(!(r.dirs||[]).length) box.innerHTML = '<div class="empty">' + t("fsEmpty") + '</div>';
 }
-$("btnBrowse").onclick = ()=>{ $("fsPicker").classList.add("show"); fsShowDrives(); };
+
 $("fsUp").onclick = async ()=>{
   if(!FS_PATH) return;
   const parent = (await api("/api/fs/list?path=" + encodeURIComponent(FS_PATH))).parent;
@@ -2687,7 +2705,6 @@ $("fsSelect").onclick = ()=>{
     $("fsPicker").classList.remove("show");
     cb(FS_PATH);
   } else {
-    $("setupPath").value = FS_PATH;
     $("fsPicker").classList.remove("show");
   }
 };
@@ -3936,11 +3953,11 @@ async function _bootScan(skipFirst){
   const iv = setInterval(async ()=>{
     try{
       const st = await api("/api/status");
-      const c = st.comfyui || {}, w = st.webui || {};
-      const building = [c, w].filter(x => (!x.ready && x.total > 0));
+      const c = st.comfyui || {};
+      const building = [c].filter(x => (!x.ready && x.total > 0));
       if(building.length){
-        const total = (c.total||0) + (w.total||0);
-        const scanned = (c.scanned||0) + (w.scanned||0);
+        const total = (c.total||0);
+        const scanned = (c.scanned||0);
         const pct = total ? Math.round(scanned / total * 100) : 0;
         $("indexBar").hidden = false;
         $("indexFill").style.width = pct + "%";
