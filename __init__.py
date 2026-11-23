@@ -399,6 +399,16 @@ async def api_fav_toggle(request):
     return _json(r)
 
 
+@PromptServer.instance.routes.post(P + "/api/delete")
+async def api_delete(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    r = G.delete_image(data.get("source", "comfyui"), _safe_name(data.get("file", "")))
+    return _json(r, 200 if r.get("ok") else 404)
+
+
 @PromptServer.instance.routes.get(P + "/api/image")
 async def api_image(request):
     source = request.query.get("source", "comfyui")

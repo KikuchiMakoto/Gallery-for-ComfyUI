@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -74,6 +74,8 @@
   .item .sub{font-size:11.5px; color:var(--dim); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .item .favmark{position:absolute; top:6px; right:8px; color:var(--star); font-size:15px; text-shadow:0 1px 3px rgba(0,0,0,.5); display:none}
   .item.faved .favmark{display:block}
+  .item .delbtn{position:absolute; right:8px; bottom:40px; width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:rgba(0,0,0,.45); color:#fff; font-size:14px; line-height:1; cursor:pointer; opacity:.8; z-index:3; display:flex; align-items:center; justify-content:center; padding:0}
+  .item .delbtn:hover{opacity:1; background:#b3261e}
   .item .badge{position:absolute; left:6px; top:6px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 7px; border-radius:6px; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .empty{grid-column:1/-1; text-align:center; color:var(--dim); padding:44px 0}
   .al-inst{grid-column:1/-1; max-width:640px; margin:26px auto; text-align:center; padding:28px 24px; border:1px solid var(--line); border-radius:14px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -468,34 +470,34 @@
 
 <div class="topbar">
   <div class="tb-inner">
-    <span class="title"><span data-i18n="title">Gallery4ComfyUI</span> <small id="srcLabel" data-i18n="subComfy">ComfyUI 图片</small></span>
-    <span class="ver-tag" data-i18n-title="verTitle" title="Ctrl+F5 强刷后应看到 v1.3.4">v1.3.4</span>
+    <span class="title"><span data-i18n="title">Gallery4ComfyUI</span> <small id="srcLabel" data-i18n="subComfy">ComfyUI 画像</small></span>
+    <span class="ver-tag" data-i18n-title="verTitle" title="Ctrl+F5 で強制リロードすると v1.3.4 と表示されます">v1.3.4</span>
     <div class="srctabs">
       <button class="srctab on" data-src="comfyui" data-i18n="tabComfy">ComfyUI</button>
       <button class="srctab" data-src="webui" data-i18n="tabWebui">WebUI</button>
-      <button class="srctab" data-src="video" data-i18n="tabVideo">🎬 视频</button>
-      <button class="srctab" data-src="artist" data-i18n="tabArtist">🎨 画师</button>
-      <button class="srctab" data-src="artlib" data-i18n="tabArtlib">🌐 画师库</button>
-      <button class="srctab" data-src="fav" data-i18n="tabFav">⭐ 收藏</button>
+      <button class="srctab" data-src="video" data-i18n="tabVideo">🎬 動画</button>
+      <button class="srctab" data-src="artist" data-i18n="tabArtist">🎨 絵師</button>
+      <button class="srctab" data-src="artlib" data-i18n="tabArtlib">🌐 絵師DB</button>
+      <button class="srctab" data-src="fav" data-i18n="tabFav">⭐ お気に入り</button>
     </div>
-    <input class="q" id="q" type="text" data-i18n-ph="searchPh" placeholder="搜索文件名 / 提示词…">
-    <button class="iconbtn" id="btnAdvSearch" data-i18n="advBtn" data-i18n-title="titleAdv" title="🔍">🔍 高级</button>
-    <select id="modelSel"><option value="">全部模型</option></select>
+    <input class="q" id="q" type="text" data-i18n-ph="searchPh" placeholder="ファイル名・プロンプトで検索…">
+    <button class="iconbtn" id="btnAdvSearch" data-i18n="advBtn" data-i18n-title="titleAdv" title="🔍">🔍 詳細検索</button>
+    <select id="modelSel"><option value="">全モデル</option></select>
     <div class="lora-filter" id="loraFilter">
       <input type="hidden" id="loraSelVal" value="">
       <button class="lora-btn" id="loraBtn" type="button">
-        <span class="lb-txt" id="loraBtnTxt">全部 LoRA</span>
+        <span class="lb-txt" id="loraBtnTxt">全 LoRA</span>
         <span class="lb-arrow">▼</span>
       </button>
       <div class="lora-tree" id="loraTree"></div>
     </div>
-    <button class="iconbtn" id="btnPackLora" data-i18n="packLora" title="打包此 LoRA 全部图片（按大模型分子目录）">📦 LoRA</button>
-    <button class="iconbtn" id="btnAdv" data-i18n="btnAdv2" data-i18n-title="titleFilter" title="Filter">⚙ 筛选</button>
+    <button class="iconbtn" id="btnPackLora" data-i18n="packLora" title="この LoRA の全画像をパック（モデル別フォルダ分け）">📦 LoRA</button>
+    <button class="iconbtn" id="btnAdv" data-i18n="btnAdv2" data-i18n-title="titleFilter" title="Filter">⚙ 絞り込み</button>
     <button class="iconbtn" id="btnStats" data-i18n-title="titleStats" title="📊">📊</button>
-    <button class="iconbtn" id="btnQuickRefresh" data-i18n="quickRefresh" data-i18n-title="titleQuickRefresh" title="↻ 只检查新增图片（与重进页面相同）">↻ 新增</button>
-    <button class="iconbtn" id="btnRefreshComfy" data-i18n="refreshComfy" title="强制重建 ComfyUI 索引">🔄 ComfyUI</button>
-    <button class="iconbtn" id="btnRefreshWebui" data-i18n="refreshWebui" title="强制重建 WebUI 索引">🔄 WebUI</button>
-    <button class="iconbtn" id="btnRefreshVideo" data-i18n="refreshVideo" title="强制重建视频索引">🔄 🎬</button>
+    <button class="iconbtn" id="btnQuickRefresh" data-i18n="quickRefresh" data-i18n-title="titleQuickRefresh" title="↻ 新しい画像だけチェック（再入場時と同じ）">↻ 新規チェック</button>
+    <button class="iconbtn" id="btnRefreshComfy" data-i18n="refreshComfy" title="ComfyUI インデックスを強制再構築">🔄 ComfyUI</button>
+    <button class="iconbtn" id="btnRefreshWebui" data-i18n="refreshWebui" title="WebUI インデックスを強制再構築">🔄 WebUI</button>
+    <button class="iconbtn" id="btnRefreshVideo" data-i18n="refreshVideo" title="動画インデックスを強制再構築">🔄 🎬</button>
     <button class="iconbtn" id="btnFav" data-i18n-title="titleFav" title="★">★</button>
     <button class="iconbtn" id="btnTheme" data-i18n-title="titleTheme" title="🌗">🌗</button>
     <button class="iconbtn" id="btnLang" data-i18n-title="titleLang" title="EN">EN</button>
@@ -503,41 +505,41 @@
     <span class="count" id="count"></span>
   </div>
   <div class="adv" id="adv">
-    <div class="f"><label data-i18n="fArtistMin">画师数 ≥</label><select id="artistMinSel">
-      <option value="" data-i18n="fArtistAny">不限</option>
-      <option value="2" data-i18n="fArtist2">2（多画师/画师串）</option>
+    <div class="f"><label data-i18n="fArtistMin">絵師数 ≥</label><select id="artistMinSel">
+      <option value="" data-i18n="fArtistAny">制限なし</option>
+      <option value="2" data-i18n="fArtist2">2（複数絵師・絵師チェーン）</option>
       <option value="3">3</option>
       <option value="4">4</option>
       <option value="5">5</option>
     </select></div>
-    <div class="f"><label data-i18n="fSampler">采样器</label><select id="samplerSel"><option value="">全部</option></select></div>
-    <div class="f"><label data-i18n="fStepsGe">步数 ≥</label><input type="number" id="stepsMin" placeholder="—"></div>
-    <div class="f"><label data-i18n="fStepsLe">步数 ≤</label><input type="number" id="stepsMax" placeholder="—"></div>
+    <div class="f"><label data-i18n="fSampler">サンプラー</label><select id="samplerSel"><option value="">すべて</option></select></div>
+    <div class="f"><label data-i18n="fStepsGe">ステップ ≥</label><input type="number" id="stepsMin" placeholder="—"></div>
+    <div class="f"><label data-i18n="fStepsLe">ステップ ≤</label><input type="number" id="stepsMax" placeholder="—"></div>
     <div class="f"><label data-i18n="fCfgGe">CFG ≥</label><input type="number" id="cfgMin" step="0.5" placeholder="—"></div>
     <div class="f"><label data-i18n="fCfgLe">CFG ≤</label><input type="number" id="cfgMax" step="0.5" placeholder="—"></div>
-    <div class="f"><label data-i18n="fWGe">宽 ≥</label><input type="number" id="minW" placeholder="—"></div>
-    <div class="f"><label data-i18n="fHGe">高 ≥</label><input type="number" id="minH" placeholder="—"></div>
-    <div class="f"><label data-i18n="fSort">排序</label><select id="sortSel">
-      <option value="newest" data-i18n="sNewest">最新</option><option value="oldest" data-i18n="sOldest">最旧</option>
-      <option value="random" data-i18n="sRandom">随机</option><option value="name" data-i18n="sName">文件名</option>
+    <div class="f"><label data-i18n="fWGe">幅 ≥</label><input type="number" id="minW" placeholder="—"></div>
+    <div class="f"><label data-i18n="fHGe">高さ ≥</label><input type="number" id="minH" placeholder="—"></div>
+    <div class="f"><label data-i18n="fSort">並び替え</label><select id="sortSel">
+      <option value="newest" data-i18n="sNewest">新しい順</option><option value="oldest" data-i18n="sOldest">古い順</option>
+      <option value="random" data-i18n="sRandom">ランダム</option><option value="name" data-i18n="sName">ファイル名</option>
     </select></div>
-    <div class="f"><label data-i18n="fGrid">网格</label><select id="densitySel">
+    <div class="f"><label data-i18n="fGrid">グリッド</label><select id="densitySel">
       <option value="md" data-i18n="gMd">中</option><option value="sm" data-i18n="gSm">小</option><option value="lg" data-i18n="gLg">大</option>
     </select></div>
-    <div class="f"><label data-i18n="fPerPage">每页</label><select id="pageSizeSel">
+    <div class="f"><label data-i18n="fPerPage">表示数</label><select id="pageSizeSel">
       <option value="30">30</option><option value="60" selected>60</option>
       <option value="120">120</option><option value="240">240</option>
     </select></div>
-    <button class="iconbtn" id="btnReset" data-i18n="fReset">重置</button>
+    <button class="iconbtn" id="btnReset" data-i18n="fReset">リセット</button>
   </div>
   <div class="stats" id="stats">
-    <h4><span data-i18n="statTitle">模型分布（</span><span id="statSrc">ComfyUI</span> · <span id="statTotal">0</span><span data-i18n="statTotal"> 张）</span></h4>
+    <h4><span data-i18n="statTitle">モデル分布（</span><span id="statSrc">ComfyUI</span> · <span id="statTotal">0</span><span data-i18n="statTotal"> 件）</span></h4>
     <div id="statBars"></div>
   </div>
 </div>
 
 <div class="indexbar" id="indexBar" hidden>
-  <span class="txt" data-i18n="indexBuilding">📊 索引构建中：</span><b id="indexText">0/0 (0%)</b>
+  <span class="txt" data-i18n="indexBuilding">📊 インデックス構築中：</span><b id="indexText">0/0 (0%)</b>
   <div class="track"><div class="fill" id="indexFill"></div></div>
 </div>
 
@@ -546,19 +548,19 @@
     <div class="pager top" id="pagerTop">
       <button class="iconbtn" id="pgTopFirst" title="«">«</button>
       <button class="iconbtn" id="pgTopPrev" title="‹">‹</button>
-      <span id="pgTopInfo" style="color:var(--dim); font-size:13px">第 1 / 1 页</span>
+      <span id="pgTopInfo" style="color:var(--dim); font-size:13px">1 / 1 ページ</span>
       <button class="iconbtn" id="pgTopNext" title="›">›</button>
       <button class="iconbtn" id="pgTopLast" title="»">»</button>
-      <span class="pg-jump"><span data-i18n="pgJump">跳至</span> <input type="number" id="pgTopJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="pgTopGo" data-i18n="pgGo">GO</button></span>
+      <span class="pg-jump"><span data-i18n="pgJump">移動</span> <input type="number" id="pgTopJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="pgTopGo" data-i18n="pgGo">GO</button></span>
     </div>
     <div class="selbar" id="gSelBar" hidden>
-      <span id="gSelCount">已选 0 张</span>
-      <button id="gPackSel" data-i18n="packSel">📦 打包选中</button>
-      <button id="gPackAll" data-i18n="packAll">📥 打包全部结果</button>
+      <span id="gSelCount">選択中 0 件</span>
+      <button id="gPackSel" data-i18n="packSel">📦 選択分をパック</button>
+      <button id="gPackAll" data-i18n="packAll">📥 全結果をパック</button>
       <span class="spacer"></span>
-      <button id="gSelClear" data-i18n="favSelClear">取消选择</button>
+      <button id="gSelClear" data-i18n="favSelClear">選択解除</button>
     </div>
-    <div class="grid md" id="grid" style="position:relative"><div class="empty" data-i18n="loading">加载中…</div></div>
+    <div class="grid md" id="grid" style="position:relative"><div class="empty" data-i18n="loading">読み込み中…</div></div>
     <div class="loading" id="loading"></div>
     <div class="pager" id="pager">
       <button class="iconbtn" id="pgFirst" data-i18n="pgFirst" title="«">«</button>
@@ -566,7 +568,7 @@
       <div class="pg-nums" id="pgNums"></div>
       <button class="iconbtn" id="pgNext" data-i18n="pgNext" title="›">›</button>
       <button class="iconbtn" id="pgLast" data-i18n="pgLast" title="»">»</button>
-      <span class="pg-jump"><span data-i18n="pgJump">跳至</span> <input type="number" id="pgJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="pgGo" data-i18n="pgGo">GO</button></span>
+      <span class="pg-jump"><span data-i18n="pgJump">移動</span> <input type="number" id="pgJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="pgGo" data-i18n="pgGo">GO</button></span>
     </div>
   </div>
 
@@ -574,37 +576,37 @@
   <div id="favView" hidden>
     <div class="fav-layout">
       <div class="fav-folders">
-        <h4 data-i18n="favTitle">收藏夹</h4>
-        <button class="iconbtn" id="btnNewFolder" data-i18n="favNew" style="width:100%; margin-bottom:8px">＋ 新建收藏夹</button>
+        <h4 data-i18n="favTitle">お気に入り</h4>
+        <button class="iconbtn" id="btnNewFolder" data-i18n="favNew" style="width:100%; margin-bottom:8px">＋ 新規フォルダ</button>
         <div id="folderList"></div>
-        <h4 class="fav-chains" data-i18n="chainTitle">画师串收藏</h4>
+        <h4 class="fav-chains" data-i18n="chainTitle">絵師チェーンのお気に入り</h4>
         <div id="favChainList"></div>
       </div>
       <div class="fav-content">
         <div class="fav-toolbar">
           <span class="ftname" id="ftName">默认收藏</span>
-          <span class="fav-hint" data-i18n="favHint">拖动图片到左侧收藏夹 · 按住空白处拉框多选</span>
+          <span class="fav-hint" data-i18n="favHint">画像を左のフォルダへドラッグ · 空白をドラッグして範囲選択</span>
           <span class="count" id="favCount"></span>
           <span class="fav-filter">
-            <button id="favFilterAll" class="on" data-i18n="favFilterAll">全部</button>
-            <button id="favFilterArtist" data-i18n="favFilterArtist">只看画师</button>
-            <button id="favFilterChain" data-i18n="favFilterChain">只看画师串</button>
+            <button id="favFilterAll" class="on" data-i18n="favFilterAll">すべて</button>
+            <button id="favFilterArtist" data-i18n="favFilterArtist">絵師のみ</button>
+            <button id="favFilterChain" data-i18n="favFilterChain">絵師チェーンのみ</button>
           </span>
         </div>
         <div class="selbar" id="selBar" hidden>
-          <span id="selCount" data-i18n="favSelCount">已选 0 张</span>
-          <button id="selAddFolder" data-i18n="favSelDrag">拖入收藏夹…</button>
-          <button id="selRemoveFav" data-i18n="favSelRemove">移出本夹</button>
-          <button id="selPack" data-i18n="packSel">📦 打包选中</button>
+          <span id="selCount" data-i18n="favSelCount">選択中 0 件</span>
+          <button id="selAddFolder" data-i18n="favSelDrag">フォルダへ移動…</button>
+          <button id="selRemoveFav" data-i18n="favSelRemove">このフォルダから外す</button>
+          <button id="selPack" data-i18n="packSel">📦 選択分をパック</button>
           <span class="spacer"></span>
-          <button id="selClear" data-i18n="favSelClear">取消选择</button>
+          <button id="selClear" data-i18n="favSelClear">選択解除</button>
         </div>
-        <div class="grid md" id="favGrid" style="position:relative"><div class="empty" data-i18n="favPickEmpty">选择左侧收藏夹查看图片</div></div>
+        <div class="grid md" id="favGrid" style="position:relative"><div class="empty" data-i18n="favPickEmpty">左のフォルダを選んで画像を表示</div></div>
         <div class="pager" id="favPager">
           <button class="iconbtn" id="fpgPrev">‹</button>
           <div class="pg-nums" id="fpgNums"></div>
           <button class="iconbtn" id="fpgNext">›</button>
-          <span class="pg-jump"><span data-i18n="pgJump">跳至</span> <input type="number" id="fpgJump" min="1" data-i18n-ph="pageNumPh" placeholder="页码"><button class="iconbtn" id="fpgGo">GO</button></span>
+          <span class="pg-jump"><span data-i18n="pgJump">移動</span> <input type="number" id="fpgJump" min="1" data-i18n-ph="pageNumPh" placeholder="ページ"><button class="iconbtn" id="fpgGo">GO</button></span>
         </div>
       </div>
     </div>
@@ -616,18 +618,18 @@
   <div id="artistView" class="artist-col" hidden>
       <div class="artist-main">
         <div class="artist-toolbar">
-          <input id="artistSearch" type="text" data-i18n-ph="artistSearchPh" placeholder="搜索画师…">
+          <input id="artistSearch" type="text" data-i18n-ph="artistSearchPh" placeholder="絵師を検索…">
           <select id="artistSort">
-            <option value="count" data-i18n="artistSortCount">按图片数</option>
-            <option value="last" data-i18n="artistSortLast">按最后使用</option>
-            <option value="first" data-i18n="artistSortFirst">按首次使用</option>
-            <option value="name" data-i18n="artistSortName">按名字</option>
-            <option value="random" data-i18n="artistSortRandom">🎲 随机</option>
+            <option value="count" data-i18n="artistSortCount">画像数順</option>
+            <option value="last" data-i18n="artistSortLast">最終使用順</option>
+            <option value="first" data-i18n="artistSortFirst">初回使用順</option>
+            <option value="name" data-i18n="artistSortName">名前順</option>
+            <option value="random" data-i18n="artistSortRandom">🎲 ランダム</option>
           </select>
           <span class="artist-hint" id="artistHint"></span>
-          <button class="iconbtn" id="artistFavOnly" data-i18n-title="titleFav" title="★ 只看收藏画师">★ <span data-i18n="artistFavOnlyTxt">只看收藏</span></button>
+          <button class="iconbtn" id="artistFavOnly" data-i18n-title="titleFav" title="★ お気に入り絵師のみ">★ <span data-i18n="artistFavOnlyTxt">お気に入りのみ</span></button>
         </div>
-        <div class="grid md artist-grid" id="artistGrid"><div class="empty" data-i18n="loading">加载中…</div></div>        <div class="pager" id="artistPager">
+        <div class="grid md artist-grid" id="artistGrid"><div class="empty" data-i18n="loading">読み込み中…</div></div>        <div class="pager" id="artistPager">
           <button class="iconbtn" id="artPgFirst" title="«">«</button>
           <button class="iconbtn" id="artPgPrev" title="‹">‹</button>
           <div class="pg-nums" id="artPgNums"></div>
@@ -641,23 +643,23 @@
   <div id="artlibView" class="artist-col" hidden>
     <div class="artist-main artlib-main">
       <div class="artist-toolbar artlib-toolbar">
-        <input id="alSearch" type="text" data-i18n-ph="alSearchPh" placeholder="搜索画师名…">
-        <select id="alArchetype" data-i18n-al="alArchetype"><option value="">全部类型</option></select>
-        <select id="alOrigin" data-i18n-al="alOrigin"><option value="">全部来源</option></select>
-        <select id="alRating" data-i18n-al="alRating"><option value="">全部向性</option></select>
-        <select id="alSubject" data-i18n-al="alSubject"><option value="">全部主体</option></select>
-        <select id="alTechnique" data-i18n-al="alTechnique"><option value="">全部技法</option></select>
-        <input id="alTheme" type="text" data-i18n-ph="alThemePh" placeholder="题材 / 版权关键词…" list="alThemeList">
+        <input id="alSearch" type="text" data-i18n-ph="alSearchPh" placeholder="絵師名で検索…">
+        <select id="alArchetype" data-i18n-al="alArchetype"><option value="">全タイプ</option></select>
+        <select id="alOrigin" data-i18n-al="alOrigin"><option value="">全出典</option></select>
+        <select id="alRating" data-i18n-al="alRating"><option value="">全レーティング</option></select>
+        <select id="alSubject" data-i18n-al="alSubject"><option value="">全被写体</option></select>
+        <select id="alTechnique" data-i18n-al="alTechnique"><option value="">全技法</option></select>
+        <input id="alTheme" type="text" data-i18n-ph="alThemePh" placeholder="題材・版権キーワード…" list="alThemeList">
         <datalist id="alThemeList"></datalist>
         <select id="alSort">
           <option value="posts" data-i18n="alSortPosts">作品数 ↓</option>
           <option value="posts_asc" data-i18n="alSortPostsAsc">作品数 ↑</option>
-          <option value="name" data-i18n="alSortName">按名字</option>
-          <option value="random" data-i18n="aSortRandom">🎲 随机</option>
+          <option value="name" data-i18n="alSortName">名前順</option>
+          <option value="random" data-i18n="aSortRandom">🎲 ランダム</option>
         </select>
         <span class="artist-hint" id="alHint"></span>
       </div>
-      <div class="grid md al-grid" id="alGrid"><div class="empty" data-i18n="alLoading">点击加载画师库…</div></div>
+      <div class="grid md al-grid" id="alGrid"><div class="empty" data-i18n="alLoading">クリックで絵師DBを読み込み…</div></div>
       <div class="pager" id="alPager">
         <button class="iconbtn" id="alPgFirst" title="«">«</button>
         <button class="iconbtn" id="alPgPrev" title="‹">‹</button>
@@ -670,21 +672,21 @@
 
   <!-- 共享右侧画师串权重栏 -->
   <div class="artist-side">
-    <div class="aw-title"><b data-i18n="awTitle">🎨 画师权重栏</b></div>
+    <div class="aw-title"><b data-i18n="awTitle">🎨 絵師ウェイト欄</b></div>
     <div class="aw-pie" id="awPie"><canvas id="awPieCanvas" width="170" height="170"></canvas><div class="aw-pie-center" id="awPieTotal">0</div></div>
     <div class="aw-list" id="awList"></div>
     <div class="aw-actions">
-      <button class="iconbtn" id="awDice" data-i18n="awDice">🎲 随机权重</button>
-      <button class="iconbtn" id="awClear" data-i18n="awClear">🗑 清空</button>
+      <button class="iconbtn" id="awDice" data-i18n="awDice">🎲 ランダムウェイト</button>
+      <button class="iconbtn" id="awClear" data-i18n="awClear">🗑 クリア</button>
     </div>
     <div class="aw-prompt">
-      <b class="aw-prompt-label" data-i18n="awPrompt">提示词</b>
+      <b class="aw-prompt-label" data-i18n="awPrompt">プロンプト</b>
       <textarea id="awPromptText" readonly></textarea>
-      <button class="aw-copy-btn" id="awCopy" data-i18n="awCopy">复制</button>
-      <button class="aw-copy-btn aw-fav-btn" id="awFavChain" data-i18n="chainFav">★ 收藏这个画师串</button>
+      <button class="aw-copy-btn" id="awCopy" data-i18n="awCopy">コピー</button>
+      <button class="aw-copy-btn aw-fav-btn" id="awFavChain" data-i18n="chainFav">★ この絵師チェーンをお気に入り</button>
     </div>
     <div class="aw-chains">
-      <b class="aw-prompt-label" data-i18n="chainTitle">画师串收藏</b>
+      <b class="aw-prompt-label" data-i18n="chainTitle">絵師チェーンのお気に入り</b>
       <div class="aw-chain-list" id="awChainList"></div>
     </div>
   </div>
@@ -697,9 +699,9 @@
         <b id="awmTitle">@artist</b>
         <span class="awm-count" id="awmCount"></span>
         <select id="awmSort" style="padding:5px 8px;font-size:12px">
-          <option value="newest" data-i18n="sNewest">最新</option>
-          <option value="random" data-i18n="sRandom">随机</option>
-          <option value="oldest" data-i18n="sOldest">最旧</option>
+          <option value="newest" data-i18n="sNewest">新しい順</option>
+          <option value="random" data-i18n="sRandom">ランダム</option>
+          <option value="oldest" data-i18n="sOldest">古い順</option>
         </select>
         <button class="iconbtn" id="awmClose" style="margin-left:auto">✕</button>
       </div>
@@ -707,13 +709,13 @@
         <div class="awm-left">
           <div class="awm-tags" id="awmTags" hidden>
             <div class="awm-tags-head">
-              <b data-i18n="awTagsTitle">🏷 常用 tag</b>
+              <b data-i18n="awTagsTitle">🏷 よく使う tag</b>
               <span class="awm-tags-max"><span id="awmTagMaxLbl"></span> <input type="number" id="awmTagMax" value="400" min="0" style="width:64px"> <span id="awmTagMaxUnit"></span></span>
               <button class="iconbtn" id="awmTagReload" style="margin-left:auto">↻</button>
             </div>
             <div class="awm-tags-body" id="awmTagsBody"></div>
           </div>
-          <div class="grid md" id="awmGrid"><div class="empty" data-i18n="loading">加载中…</div></div>
+          <div class="grid md" id="awmGrid"><div class="empty" data-i18n="loading">読み込み中…</div></div>
           <div class="pager" id="awmPager">
             <button class="iconbtn" id="awmPrev">‹</button>
             <div class="pg-nums" id="awmPgNums"></div>
@@ -722,14 +724,14 @@
         </div>
         <div class="awm-right" id="awmRight">
           <div class="awm-preview" id="awmPreview">
-            <div class="awm-ph-empty" id="awmPhEmpty">← <span data-i18n="awmPick">点击左侧图片查看参数</span></div>
+            <div class="awm-ph-empty" id="awmPhEmpty">← <span data-i18n="awmPick">左の画像をクリックしてパラメータ表示</span></div>
             <img id="awmPhImg" hidden alt="">
             <video id="awmPhVideo" hidden controls preload="metadata"></video>
           </div>
           <div class="awm-meta" id="awmMeta" hidden>
             <div class="awm-meta-name" id="awmMetaName"></div>
             <div class="param-grid" id="awmMetaParams"></div>
-            <div class="awm-sec-title" data-i18n="awmPositive">正向提示词</div>
+            <div class="awm-sec-title" data-i18n="awmPositive">ポジティブプロンプト</div>
             <div class="awm-pos" id="awmMetaPos"></div>
             <div class="awm-sec-title">Negative</div>
             <div class="awm-neg" id="awmMetaNeg"></div>
@@ -749,11 +751,11 @@
     <div class="awm-head">
       <b id="aiName">@artist</b>
       <span class="awm-count" id="aiTag">@tag</span>
-      <span class="al-chip al-chip-on" id="aiBadge" hidden>本地</span>
+      <span class="al-chip al-chip-on" id="aiBadge" hidden>ローカル</span>
       <div style="flex:1"></div>
       <div class="ai-head-actions">
-        <button class="iconbtn" id="aiCopy" data-i18n-title="aiCopy" title="📋 复制 @tag">📋</button>
-        <button class="iconbtn" id="aiAdd" data-i18n-title="aiAdd" title="➕ 加入画师串" style="background:var(--accent); color:#fff; border-color:var(--accent)">➕</button>
+        <button class="iconbtn" id="aiCopy" data-i18n-title="aiCopy" title="📋 @tagをコピー">📋</button>
+        <button class="iconbtn" id="aiAdd" data-i18n-title="aiAdd" title="➕ 絵師チェーンに追加" style="background:var(--accent); color:#fff; border-color:var(--accent)">➕</button>
         <button class="iconbtn" id="aiClose">✕</button>
       </div>
     </div>
@@ -761,16 +763,16 @@
       <div class="ai-left" id="aiLeft">
         <div class="ai-grid-wrap" id="aiGridWrap">
           <div class="ai-grid-top">
-            <span class="ai-grid-title" data-i18n="aiWorks">🖼 作品库</span>
+            <span class="ai-grid-title" data-i18n="aiWorks">🖼 作品一覧</span>
             <span class="ai-grid-count" id="aiGridCount"></span>
           </div>
           <div class="ai-grid-hint" id="aiGridHint" hidden></div>
-          <div class="grid md ai-grid" id="aiGrid"><div class="empty" data-i18n="loading">加载中…</div></div>
+          <div class="grid md ai-grid" id="aiGrid"><div class="empty" data-i18n="loading">読み込み中…</div></div>
         </div>
         <div class="ai-big" id="aiBig" hidden>
           <img id="aiBigImg" alt="">
           <video id="aiBigVideo" hidden controls preload="metadata"></video>
-          <button class="iconbtn ai-big-back" id="aiBigBack">← <span data-i18n="aiBigBack">返回图库</span></button>
+          <button class="iconbtn ai-big-back" id="aiBigBack">← <span data-i18n="aiBigBack">ギャラリーへ戻る</span></button>
         </div>
       </div>
       <div class="ai-right" id="aiRight">
@@ -780,7 +782,7 @@
             <div class="ai-img-name" id="aiImgName"></div>
             <div class="param-grid" id="aiImgParams"></div>
           </div>
-          <div class="ai-sec-title" data-i18n="awmPositive">正向提示词</div>
+          <div class="ai-sec-title" data-i18n="awmPositive">ポジティブプロンプト</div>
           <div class="ai-pos" id="aiImgPos"></div>
           <div class="ai-sec-title">Negative</div>
           <div class="ai-neg" id="aiImgNeg"></div>
@@ -792,18 +794,18 @@
 
 <!-- 高级搜索 -->
 <div class="advsearch" id="advSearch">
-  <button class="foldbtn" id="advFold" data-i18n-title="advFoldTitle" title="折叠/展开左侧">◀</button>
+  <button class="foldbtn" id="advFold" data-i18n-title="advFoldTitle" title="左パネルを折りたたむ・展開">◀</button>
   <div class="adv-left" id="advLeft">
     <div class="adv-left-inner">
-      <h3><span data-i18n="advTitle">🔍 高级搜索</span> <span style="float:right; font-size:11px; color:var(--dim); cursor:pointer" id="advCloseBtn" data-i18n="advClose">✕ 关闭</span></h3>
+      <h3><span data-i18n="advTitle">🔍 高度な検索</span> <span style="float:right; font-size:11px; color:var(--dim); cursor:pointer" id="advCloseBtn" data-i18n="advClose">✕ 閉じる</span></h3>
       <div class="ag-inputrow">
-        <input id="tagQ" type="text" data-i18n-ph="advTagPh" placeholder="输入 tag，逗号分隔多个，回车搜索…">
-        <button class="iconbtn" id="btnAgSearch" data-i18n="advSearchBtn" style="background:var(--accent); color:#fff; border-color:var(--accent)">搜索</button>
+        <input id="tagQ" type="text" data-i18n-ph="advTagPh" placeholder="tagを入力（カンマ区切りで複数）、Enterで検索…">
+        <button class="iconbtn" id="btnAgSearch" data-i18n="advSearchBtn" style="background:var(--accent); color:#fff; border-color:var(--accent)">検索</button>
       </div>
       <div id="tagSuggest"></div>
       <div class="tag-sel" id="tagSel"></div>
       <div class="tag-toolbar">
-        <b data-i18n="advHistory">历史 tag（点击加入搜索，按使用次数）</b>
+        <b data-i18n="advHistory">履歴tag（クリックで検索に追加、使用回数順）</b>
       </div>
       <div class="taglist" id="tagList"></div>
       <div class="adv-filters" id="advFilters"></div>
@@ -812,24 +814,24 @@
   <div class="adv-right" id="advRight">
     <div class="pager top" id="agPagerTop">
       <button class="iconbtn" id="agTopPrev" title="‹">‹</button>
-      <span id="agTopInfo" style="color:var(--dim); font-size:13px">第 1 / 1 页</span>
+      <span id="agTopInfo" style="color:var(--dim); font-size:13px">1 / 1 ページ</span>
       <button class="iconbtn" id="agTopNext" title="›">›</button>
-      <span class="pg-jump"><span data-i18n="pgJump">跳至</span> <input type="number" id="agTopJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="agTopGo" data-i18n="pgGo">GO</button></span>
+      <span class="pg-jump"><span data-i18n="pgJump">移動</span> <input type="number" id="agTopJump" min="1" max="99999" placeholder="1"><button class="iconbtn" id="agTopGo" data-i18n="pgGo">GO</button></span>
     </div>
     <div class="selbar" id="agSelBar" hidden>
-      <span id="agSelCount">已选 0 张</span>
-      <button id="agPackSel" data-i18n="packSel">📦 打包选中</button>
-      <button id="agPackAll" data-i18n="packAll">📥 打包全部结果</button>
+      <span id="agSelCount">選択中 0 件</span>
+      <button id="agPackSel" data-i18n="packSel">📦 選択分をパック</button>
+      <button id="agPackAll" data-i18n="packAll">📥 全結果をパック</button>
       <span class="spacer"></span>
-      <button id="agSelClear" data-i18n="favSelClear">取消选择</button>
+      <button id="agSelClear" data-i18n="favSelClear">選択解除</button>
     </div>
-    <div class="grid md" id="agGrid" style="position:relative"><div class="empty" data-i18n="advInit">请选择 tag 或条件开始搜索</div></div>
+    <div class="grid md" id="agGrid" style="position:relative"><div class="empty" data-i18n="advInit">tagや条件を選んで検索を開始</div></div>
     <div class="loading" id="agLoading"></div>
     <div class="pager" id="agPager">
       <button class="iconbtn" id="agPrev">‹</button>
       <div class="pg-nums" id="agNums"></div>
       <button class="iconbtn" id="agNext">›</button>
-      <span class="pg-jump"><span data-i18n="pgJump">跳至</span> <input type="number" id="agJump" min="1" data-i18n-ph="pageNumPh" placeholder="页码"><button class="iconbtn" id="agGo">GO</button></span>
+      <span class="pg-jump"><span data-i18n="pgJump">移動</span> <input type="number" id="agJump" min="1" data-i18n-ph="pageNumPh" placeholder="ページ"><button class="iconbtn" id="agGo">GO</button></span>
     </div>
   </div>
 </div>
@@ -837,36 +839,36 @@
 <!-- 设置 -->
 <div class="setup" id="setup">
   <div class="card">
-    <h3 data-i18n="setupTitle">Stable Diffusion WebUI 设置</h3>
-    <p data-i18n="setupDesc">图库的「WebUI」来源需要读取 SD WebUI 的 <b>outputs</b> 目录（生成的图片）与 <b>models</b> 目录（模型）。
-       请通过浏览按钮在文件夹中选择你的 SD WebUI 安装根目录（通常是含有 <b>outputs</b> 文件夹的那一层）。
-       不配置也能正常使用 ComfyUI 图库，之后可随时在此修改。</p>
+    <h3 data-i18n="setupTitle">Stable Diffusion WebUI 設定</h3>
+    <p data-i18n="setupDesc">ギャラリーの「WebUI」ソースは、SD WebUI の <b>outputs</b> フォルダ（生成画像）と <b>models</b> フォルダ（モデル）を読みます。
+       参照ボタンから、SD WebUI のインストール先ルートフォルダ（通常は <b>outputs</b> フォルダのある階層）を選んでください。
+       設定しなくても ComfyUI ギャラリーは通常通り使え、後からいつでも変更できます。</p>
     <div class="row">
-      <input id="setupPath" type="text" readonly data-i18n-ph="setupPathPh" placeholder="尚未选择目录">
-      <button class="iconbtn" id="btnBrowse" data-i18n="browse">📁 浏览…</button>
+      <input id="setupPath" type="text" readonly data-i18n-ph="setupPathPh" placeholder="フォルダ未選択">
+      <button class="iconbtn" id="btnBrowse" data-i18n="browse">📁 参照…</button>
     </div>
     <div class="row" style="flex-wrap:wrap; gap:6px">
-      <label for="setupAf" data-i18n="afLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim); display:flex; align-items:center">画师串格式</label>
+      <label for="setupAf" data-i18n="afLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim); display:flex; align-items:center">絵師チェーン形式</label>
       <select id="setupAf" style="flex:1; min-width:200px; padding:5px 8px; border-radius:6px; background:var(--card); color:var(--txt); border:1px solid var(--line)">
-        <option value="anima">Anima：@画师名（下划线转空格）</option>
-        <option value="illustrious">Illustrious：artist:画师名（权重=1 不加括号）</option>
-        <option value="noobai">NoobAI：artist:画师名（权重=1 不加括号）</option>
-        <option value="nai">NAI：artist:画师名（权重=1 不加括号）</option>
+        <option value="anima">Anima：@絵師名（アンダースコアをスペースに変換）</option>
+        <option value="illustrious">Illustrious：artist:絵師名（ウェイト=1 のとき括弧なし）</option>
+        <option value="noobai">NoobAI：artist:絵師名（ウェイト=1 のとき括弧なし）</option>
+        <option value="nai">NAI：artist:絵師名（ウェイト=1 のとき括弧なし）</option>
       </select>
     </div>
     <div class="row" style="flex-wrap:wrap; gap:6px">
       <span id="afPreview" style="flex:1; font-size:11.5px; color:var(--dim); word-break:break-all"></span>
     </div>
     <div class="row" style="flex-wrap:wrap; gap:6px">
-      <label for="setupScan" data-i18n="scanLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim); display:flex; align-items:center">图库扫描</label>
+      <label for="setupScan" data-i18n="scanLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim); display:flex; align-items:center">ギャラリースキャン</label>
       <select id="setupScan" style="flex:1; min-width:200px; padding:5px 8px; border-radius:6px; background:var(--card); color:var(--txt); border:1px solid var(--line)">
-        <option value="incremental" data-i18n="scanInc">增量扫描（每次进来只看新增，快）</option>
-        <option value="full" data-i18n="scanFull">全量重建（每次最慢，索引异常时才用）</option>
+        <option value="incremental" data-i18n="scanInc">増分スキャン（入るたび新規だけ確認、高速）</option>
+        <option value="full" data-i18n="scanFull">全件再構築（毎回低速、インデックス異常時のみ）</option>
       </select>
     </div>
     <div class="row">
       <button class="iconbtn" id="btnSetupSave" data-i18n="save" style="flex:1; background:var(--accent); border-color:var(--accent); color:#fff">保存</button>
-      <button class="iconbtn" id="btnSetupSkip" data-i18n="skip">跳过</button>
+      <button class="iconbtn" id="btnSetupSkip" data-i18n="skip">スキップ</button>
     </div>
     <div class="msg" id="setupMsg"></div>
   </div>
@@ -875,14 +877,14 @@
 <!-- 目录选择器 -->
 <div class="setup" id="fsPicker">
   <div class="card">
-    <h3 data-i18n="fsTitle">选择目录</h3>
+    <h3 data-i18n="fsTitle">フォルダ選択</h3>
     <div class="fs-path" id="fsPath">/</div>
     <div class="fs-list" id="fsList"></div>
     <div class="row">
-      <button class="iconbtn" id="fsUp" data-i18n="fsUp">↑ 上级目录</button>
-      <button class="iconbtn" id="fsNew" data-i18n="fsNew">📁 新建文件夹</button>
-      <button class="iconbtn" id="fsSelect" data-i18n="fsSelect" style="flex:1; background:var(--accent); border-color:var(--accent); color:#fff">选择此目录</button>
-      <button class="iconbtn" id="fsCancel" data-i18n="fsCancel">取消</button>
+      <button class="iconbtn" id="fsUp" data-i18n="fsUp">↑ 上の階層</button>
+      <button class="iconbtn" id="fsNew" data-i18n="fsNew">📁 新規フォルダ</button>
+      <button class="iconbtn" id="fsSelect" data-i18n="fsSelect" style="flex:1; background:var(--accent); border-color:var(--accent); color:#fff">このフォルダを選択</button>
+      <button class="iconbtn" id="fsCancel" data-i18n="fsCancel">キャンセル</button>
     </div>
   </div>
 </div>
@@ -899,27 +901,27 @@
       <div class="imgbar">
         <span class="ib-name" id="mimgName"></span>
         <span class="ib-count" id="mimgCount"></span>
-        <button class="ib-fs" id="mFs" data-i18n-title="titleFs" title="全屏观看 / Fullscreen">⛶</button>
+        <button class="ib-fs" id="mFs" data-i18n-title="titleFs" title="全画面表示 / Fullscreen">⛶</button>
       </div>
     </div>
     <div class="info">
       <div class="info-head">
         <h3 id="mfile"></h3>
-        <span class="favstate" id="mFavState">☆ 收藏</span>
+        <span class="favstate" id="mFavState">☆ お気に入り</span>
       </div>
       <div class="lb-artists" id="mArtists" hidden></div>
       <div class="param-grid" id="mparams"></div>
-      <div class="sec-title" data-i18n="modalPrompt">正面提示词</div>
+      <div class="sec-title" data-i18n="modalPrompt">ポジティブプロンプト</div>
       <div class="pos" id="mpos"></div>
       <div class="meta-raw" id="mraw"></div>
-      <div class="folderpick" id="mFavPick"><span class="fp-label" data-i18n="modalAddFav">加入收藏夹：</span></div>
+      <div class="folderpick" id="mFavPick"><span class="fp-label" data-i18n="modalAddFav">フォルダに追加：</span></div>
       <div class="btns">
-        <button class="primary" id="mDown" data-i18n="modalDown">⬇ 下载</button>
-        <button id="mCopy" data-i18n="modalCopy">⧉ 复制提示词</button>
-        <button id="mCopyImg" data-i18n="modalCopyImg">🖼 复制图片</button>
-        <button id="mMeta" data-i18n="modalMeta">📄 PNG 信息</button>
-        <button id="mOpen" data-i18n="modalOpen">↗ 原图</button>
-        <button id="mOpenFolder" data-i18n="modalOpenFolder">📂 所在位置</button>
+        <button class="primary" id="mDown" data-i18n="modalDown">⬇ ダウンロード</button>
+        <button id="mCopy" data-i18n="modalCopy">⧉ プロンプトをコピー</button>
+        <button id="mCopyImg" data-i18n="modalCopyImg">🖼 画像をコピー</button>
+        <button id="mMeta" data-i18n="modalMeta">📄 PNG情報</button>
+        <button id="mOpen" data-i18n="modalOpen">↗ 原寸</button>
+        <button id="mOpenFolder" data-i18n="modalOpenFolder">📂 保存場所</button>
       </div>
     </div>
   </div>
@@ -929,101 +931,102 @@
 "use strict";
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
-  zh: {
-    title: "Gallery4ComfyUI", subComfy: "ComfyUI 图片", subWebui: "WebUI 图片", subFav: "收藏",
-    tabComfy: "ComfyUI", tabWebui: "WebUI", tabVideo: "🎬 视频", tabArtist: "🎨 画师", tabFav: "⭐ 收藏",
-    tabArtlib: "🌐 画师库",
-    alSearchPh: "搜索画师名（如 dairi）…", alThemePh: "题材/版权关键词…", alLoading: "点击加载画师库…",
-    alSortPosts: "作品数 ↓", alSortPostsAsc: "作品数 ↑", alSortName: "按名字",
-    alArchetype: "全部类型", alOrigin: "全部来源", alRating: "全部向性",
-    alSubject: "全部主体", alTechnique: "全部技法",
-    artistSearchPh: "搜索画师…", artistSortCount: "按图片数", artistSortLast: "按最后使用",
-    artistSortFirst: "按首次使用", artistSortName: "按名字", artistSortRandom: "🎲 随机",
-    artistFavOnlyTxt: "只看收藏",
-    aSortRandom: "🎲 随机", awTitle: "🎨 画师权重栏",
-    awDice: "🎲 随机权重", awClear: "🗑 清空", awPrompt: "提示词", awCopy: "复制",
-    awTagsTitle: "🏷 常用 tag",
-    awmPick: "点击左侧图片查看参数", awmPositive: "正向提示词",
-    searchPh: "搜索文件名 / 提示词…", advBtn: "🔍 高级", btnAdv2: "⚙ 筛选",
+  ja: {
+    title: "Gallery4ComfyUI", subComfy: "ComfyUI 画像", subWebui: "WebUI 画像", subFav: "お気に入り",
+    tabComfy: "ComfyUI", tabWebui: "WebUI", tabVideo: "🎬 動画", tabArtist: "🎨 絵師", tabFav: "⭐ お気に入り",
+    tabArtlib: "🌐 絵師DB",
+    alSearchPh: "絵師名で検索（例：dairi）…", alThemePh: "題材・版権キーワード…", alLoading: "クリックで絵師DBを読み込み…",
+    alSortPosts: "作品数 ↓", alSortPostsAsc: "作品数 ↑", alSortName: "名前順",
+    alArchetype: "全タイプ", alOrigin: "全出典", alRating: "全レーティング",
+    alSubject: "全被写体", alTechnique: "全技法",
+    artistSearchPh: "絵師を検索…", artistSortCount: "画像数順", artistSortLast: "最終使用順",
+    artistSortFirst: "初回使用順", artistSortName: "名前順", artistSortRandom: "🎲 ランダム",
+    artistFavOnlyTxt: "お気に入りのみ",
+    aSortRandom: "🎲 ランダム", awTitle: "🎨 絵師ウェイト欄",
+    awDice: "🎲 ランダムウェイト", awClear: "🗑 クリア", awPrompt: "プロンプト", awCopy: "コピー",
+    awTagsTitle: "🏷 よく使う tag",
+    awmPick: "左の画像をクリックしてパラメータ表示", awmPositive: "ポジティブプロンプト",
+    searchPh: "ファイル名・プロンプトで検索…", advBtn: "🔍 詳細検索", btnAdv2: "⚙ 絞り込み",
     btnStats: "📊", btnFavOnly: "★", btnTheme: "🌗", btnSetup: "⚙",
-    fSampler: "采样器", fLora: "LoRA", fStepsGe: "步数 ≥", fStepsLe: "步数 ≤", fCfgGe: "CFG ≥", fCfgLe: "CFG ≤",
-    fArtistMin: "画师数 ≥", fArtistAny: "不限", fArtist2: "2（多画师/画师串）",
-    fWGe: "宽 ≥", fHGe: "高 ≥", fSort: "排序", fGrid: "网格", fPerPage: "每页", fReset: "重置",
-    sNewest: "最新", sOldest: "最旧", sRandom: "随机", sName: "文件名",
+    fSampler: "サンプラー", fLora: "LoRA", fStepsGe: "ステップ ≥", fStepsLe: "ステップ ≤", fCfgGe: "CFG ≥", fCfgLe: "CFG ≤",
+    fArtistMin: "絵師数 ≥", fArtistAny: "制限なし", fArtist2: "2（複数絵師・絵師チェーン）",
+    fWGe: "幅 ≥", fHGe: "高さ ≥", fSort: "並び替え", fGrid: "グリッド", fPerPage: "表示数", fReset: "リセット",
+    sNewest: "新しい順", sOldest: "古い順", sRandom: "ランダム", sName: "ファイル名",
     gSm: "小", gMd: "中", gLg: "大",
-    loading: "加载中…", noImage: "没有找到图片", noResult: "没有匹配的图片",
-    building: "索引构建中，请稍候…", notCfgWebui: "未配置 SD WebUI 源 — 点右上角 ⚙ 设置根目录后可用",
-    noCfgHint: "（不影响 ComfyUI 图库）",
-    pgFirst: "第一页", pgPrev: "上一页", pgNext: "下一页", pgLast: "最后一页", pgJump: "跳至", pgGo: "GO", pgPage: "页",
-    countTotal: "共", countOf: "张",
-    indexBuilding: "📊 索引构建中：",
-    advTitle: "🔍 高级搜索", advClose: "✕ 关闭", advSearchBtn: "搜索",
-    advTagPh: "输入 tag，逗号分隔多个，回车搜索…",
-    advHistory: "历史 tag（点击加入搜索，按使用次数）",
-    advSuggestPh: "输入 tag 补全…",
-    favTitle: "收藏", favNew: "＋ 新建收藏夹", favHint: "拖动图片到左侧收藏夹 · 按住空白处拉框多选",
-    favSelCount: "已选", favSelDrag: "拖入收藏夹…", favSelRemove: "移出本夹", favSelClear: "取消选择", packSel: "📦 打包选中", packAll: "📥 打包全部结果", packing: "打包中…", packDone: "已打包", packLora: "📦 LoRA",
-    favEmpty: "该收藏夹还没有图片，从图库拖进来吧", favPickEmpty: "选择左侧收藏夹查看图片",
-    favNewName: "新收藏夹名称：", favDelConfirm: "删除收藏夹「",
-    modalCopy: "⧉ 复制提示词", modalCopyImg: "🖼 复制图片", modalDown: "⬇ 下载",
-    modalMeta: "📄 PNG 信息", modalOpen: "↗ 原图", modalOpenFolder: "📂 所在位置", modalAddFav: "加入收藏夹：", openFolderFail: "打开位置失败",
-    modalPrompt: "正面提示词",
-    lblSeed: "种子", lblSteps: "步数", lblCfg: "CFG", lblSampler: "采样器",
-    lblScheduler: "调度器", lblSize: "尺寸", lblModel: "模型", lblSize2: "大小",
-    lblFav: "收藏", lblFaved: "已收藏", loraRoot: "根目录",
-    unitSteps: "步", fAll: "全部", fModel: "模型",
-    advInit: "请选择 tag 或条件开始搜索", delTitle: "删除",
-    createFail: "创建失败", dragToWhich: "拖入哪个收藏夹？（输入名称）", noMeta: "(无 metadata)",
-    hasOutputs: "含 outputs", hasModels: "含 models",
-    titleAdv: "高级搜索 / Advanced Search", titleFilter: "筛选 / Filters",
-    titleStats: "统计 / Statistics", titleFav: "仅看收藏 / Favorites only",
-    titleRefresh: "刷新索引 / Refresh index",
-    quickRefresh: "↻ 新增",
-    titleQuickRefresh: "只检查新增图片（同重进页面）/ Check new images only (same as re-entering)",
-    toastQuickOk: "已检查新增图片",
+    loading: "読み込み中…", noImage: "画像が見つかりません", noResult: "一致する画像がありません",
+    building: "インデックス構築中です。お待ちください…", notCfgWebui: "SD WebUI ソース未設定 — 右上の ⚙ からルートフォルダを設定すると使えます",
+    noCfgHint: "（ComfyUI ギャラリーには影響しません）",
+    pgFirst: "先頭", pgPrev: "前へ", pgNext: "次へ", pgLast: "末尾", pgJump: "移動", pgGo: "GO", pgPage: "ページ",
+    countTotal: "全", countOf: "件",
+    indexBuilding: "📊 インデックス構築中：",
+    advTitle: "🔍 高度な検索", advClose: "✕ 閉じる", advSearchBtn: "検索",
+    advTagPh: "tagを入力（カンマ区切りで複数）、Enterで検索…",
+    advHistory: "履歴tag（クリックで検索に追加、使用回数順）",
+    advSuggestPh: "tag補完を入力…",
+    favTitle: "お気に入り", favNew: "＋ 新規フォルダ", favHint: "画像を左のフォルダへドラッグ · 空白をドラッグして範囲選択",
+    favSelCount: "選択中", favSelDrag: "フォルダへ移動…", favSelRemove: "このフォルダから外す", favSelClear: "選択解除", packSel: "📦 選択分をパック", packAll: "📥 全結果をパック", packing: "パック中…", packDone: "パック完了", packLora: "📦 LoRA",
+    favEmpty: "このフォルダにはまだ画像がありません。ギャラリーからドラッグしてください", favPickEmpty: "左のフォルダを選んで画像を表示",
+    favNewName: "新しいフォルダ名：", favDelConfirm: "次のフォルダを削除しますか：「",
+    modalCopy: "⧉ プロンプトをコピー", modalCopyImg: "🖼 画像をコピー", modalDown: "⬇ ダウンロード",
+    modalMeta: "📄 PNG情報", modalOpen: "↗ 原寸", modalOpenFolder: "📂 保存場所", modalAddFav: "フォルダに追加：", openFolderFail: "場所を開けませんでした",
+    modalPrompt: "ポジティブプロンプト",
+    lblSeed: "シード", lblSteps: "ステップ", lblCfg: "CFG", lblSampler: "サンプラー",
+    lblScheduler: "スケジューラ", lblSize: "サイズ", lblModel: "モデル", lblSize2: "容量",
+    lblFav: "お気に入り", lblFaved: "お気に入り済み", loraRoot: "ルート",
+    unitSteps: "ステップ", fAll: "すべて", fModel: "モデル",
+    advInit: "tagや条件を選んで検索を開始", delTitle: "削除",
+    createFail: "作成に失敗しました", dragToWhich: "どのフォルダへ入れますか？（名前を入力）", noMeta: "(metadata なし)",
+    hasOutputs: "outputs あり", hasModels: "models あり",
+    titleAdv: "高度な検索 / Advanced Search", titleFilter: "絞り込み / Filters",
+    titleStats: "統計 / Statistics", titleFav: "お気に入りのみ / Favorites only",
+    titleRefresh: "インデックス更新 / Refresh index",
+    quickRefresh: "↻ 新規チェック",
+    titleQuickRefresh: "新しい画像だけチェック（再入場時と同じ）/ Check new images only (same as re-entering)",
+    toastQuickOk: "新しい画像をチェックしました",
     refreshComfy: "🔄 ComfyUI",
     refreshWebui: "🔄 WebUI",
     refreshVideo: "🔄 🎬",
-    titleTheme: "切换主题 / Toggle theme", titleLang: "语言 / Language",
-    titleSetup: "设置 / Settings", titleFs: "全屏观看 / Fullscreen",
-    toastAdded: "✅ 已加入「", toastRemoved: "已移出「", toastCopyOk: "提示词已复制", toastImgCopyOk: "图片已复制",
-    toastImgCopyFail: "复制图片失败", toastFolderExists: "收藏夹已存在", toastFolderEmpty: "名称不能为空",
-    setupTitle: "Stable Diffusion WebUI 设置",
-    afLabel: "画师串格式",
-    chainTitle: "画师串收藏",
-    chainFav: "★ 收藏这个画师串",
-    favFilterAll: "全部",
-    favFilterArtist: "只看画师",
-    favFilterChain: "只看画师串",
-    scanLabel: "图库扫描",
-    scanInc: "增量扫描（每次进来只看新增，快）",
-    scanFull: "全量重建（每次最慢，索引异常时才用）",
-    setupDesc: "图库的「WebUI」来源需要读取 SD WebUI 的 <b>outputs</b> 目录（生成的图片）与 <b>models</b> 目录（模型）。请通过浏览按钮在文件夹中选择你的 SD WebUI 安装根目录（通常是含有 <b>outputs</b> 文件夹的那一层）。不配置也能正常使用 ComfyUI 图库，之后可随时在此修改。",
-    setupPathPh: "尚未选择目录", browse: "📁 浏览…", save: "保存", skip: "跳过",
-    setupSaved: "✅ 已保存", setupValid: "✅ 目录有效，已保存",
-    fsTitle: "选择目录", fsUp: "↑ 上级目录", fsSelect: "选择此目录", fsCancel: "取消", fsNew: "📁 新建文件夹",
-    fsPickDrive: "选择盘符", fsEmpty: "空目录",
-    statTitle: "模型分布（", statTotal: "张）",
-    aiCopy: "复制 @tag", aiAdd: "加入画师串", aiInfo: "ℹ 简介",
-    aiNote: "备注", aiCount: "作品数", aiWeight: "默认权重", aiFav: "收藏",
-    aiLastUse: "最后使用", aiFirstUse: "首次使用", aiUsed: "本库用过",
-    aiSpecialty: "定性", aiProfile: "简介", aiArchetype: "类型", aiOrigin: "来源",
-    aiSubject: "主体", aiTheme: "题材", aiTechnique: "技法", aiComposition: "构图",
-    aiCrypto: "主要版权", aiSig: "特征签名", aiUrl: "主页", aiRating: "分级",
-    aiEroRatio: "色气度", aiSexTags: "涩涩特色", aiSoftTags: "氛围", aiDeprecated: "已废弃",
-    aiArtlib: "Danbooru 库", aiLocal: "本地用过", aiEmpty: "（无）",
-    aiBigBack: "返回图库", aiWorks: "🖼 作品库",
-    loraPickFirst: "请先在上方选择一个 LoRA", loraAll: "全部 LoRA", allModels: "全部模型",
-    alDlTitle: "画师库数据未安装", alDlBtn: "⬇ 下载画师库数据（3.3 MB）",
-    alDlDesc: "画师库需要一份 Danbooru 公开画师数据（4.8 万位画师，解压约 18 MB）。下载后即可按类型 / 来源 / 题材 / 技法筛选。",
-    alDlPartial: "已装部分文件：", alDlDownloading: "正在下载…", alDlExtracting: "正在解压…",
-    alDlOk: "✅ 安装完成，正在加载…", alDlFail: "❌ 下载失败：",
-    alDlNote: "数据来自 Danbooru 公开 API，只存进插件目录，不含任何个人数据。也可用 GALLERY4_DATA_DIR 指向自备目录、或运行 tools/build_artist_db.py 自己抓；网络不通时可用 GALLERY4_ARTLIB_URL 指向镜像。",
-    fsNewName: "新建文件夹名称：", fsEnterFirst: "请先进入一个目录",
-    packFail: "打包失败", unitImages: " 张",
-    advFoldTitle: "折叠/展开左侧", clickCopy: "点击复制", removeTitle: "移除",
-    alreadyAdded: "★ 已加入", loadFail: "⚠ 加载失败", pageNumPh: "页码",
-    verTitle: "Ctrl+F5 强刷后应看到 v1.3.4", favDefaultName: "默认收藏", videoWord: "视频",
+    titleTheme: "テーマ切替 / Toggle theme", titleLang: "言語 / Language",
+    titleSetup: "設定 / Settings", titleFs: "全画面表示 / Fullscreen",
+    toastAdded: "✅ 追加しました：「", toastRemoved: "外しました：「", toastCopyOk: "プロンプトをコピーしました", toastImgCopyOk: "画像をコピーしました",
+    toastImgCopyFail: "画像のコピーに失敗しました", toastFolderExists: "そのフォルダは既にあります", toastFolderEmpty: "名前を入力してください",
+    setupTitle: "Stable Diffusion WebUI 設定",
+    afLabel: "絵師チェーン形式",
+    chainTitle: "絵師チェーンのお気に入り",
+    chainFav: "★ この絵師チェーンをお気に入り",
+    favFilterAll: "すべて",
+    favFilterArtist: "絵師のみ",
+    favFilterChain: "絵師チェーンのみ",
+    scanLabel: "ギャラリースキャン",
+    scanInc: "増分スキャン（入るたび新規だけ確認、高速）",
+    scanFull: "全件再構築（毎回低速、インデックス異常時のみ）",
+    setupDesc: "ギャラリーの「WebUI」ソースは、SD WebUI の <b>outputs</b> フォルダ（生成画像）と <b>models</b> フォルダ（モデル）を読みます。参照ボタンから、SD WebUI のインストール先ルートフォルダ（通常は <b>outputs</b> フォルダのある階層）を選んでください。設定しなくても ComfyUI ギャラリーは通常通り使え、後からいつでも変更できます。",
+    setupPathPh: "フォルダ未選択", browse: "📁 参照…", save: "保存", skip: "スキップ",
+    setupSaved: "✅ 保存しました", setupValid: "✅ 有効なフォルダです。保存しました",
+    fsTitle: "フォルダ選択", fsUp: "↑ 上の階層", fsSelect: "このフォルダを選択", fsCancel: "キャンセル", fsNew: "📁 新規フォルダ",
+    fsPickDrive: "ドライブを選択", fsEmpty: "空のフォルダ",
+    statTitle: "モデル分布（", statTotal: "件）",
+    aiCopy: "@tagをコピー", aiAdd: "絵師チェーンに追加", aiInfo: "ℹ 紹介",
+    aiNote: "メモ", aiCount: "作品数", aiWeight: "デフォルトウェイト", aiFav: "お気に入り",
+    aiLastUse: "最終使用", aiFirstUse: "初回使用", aiUsed: "ローカル使用あり",
+    aiSpecialty: "特性", aiProfile: "紹介", aiArchetype: "タイプ", aiOrigin: "出典",
+    aiSubject: "被写体", aiTheme: "題材", aiTechnique: "技法", aiComposition: "構図",
+    aiCrypto: "主な版権", aiSig: "特徴tag", aiUrl: "ホームページ", aiRating: "レーティング",
+    aiEroRatio: "エロ度", aiSexTags: "性的特徴", aiSoftTags: "雰囲気", aiDeprecated: "廃止済み",
+    aiArtlib: "Danbooru DB", aiLocal: "ローカル使用", aiEmpty: "（なし）",
+    aiBigBack: "ギャラリーへ戻る", aiWorks: "🖼 作品一覧",
+    loraPickFirst: "まず上で LoRA を選んでください", loraAll: "全 LoRA", allModels: "全モデル",
+    alDlTitle: "絵師DBデータ未インストール", alDlBtn: "⬇ 絵師データをダウンロード（3.3 MB）",
+    alDlDesc: "絵師DBには Danbooru の公開絵師データ（約4.8万人、展開後約 18 MB）が必要です。ダウンロード後はタイプ・出典・題材・技法で絞り込めます。",
+    alDlPartial: "一部ファイルのみ存在：", alDlDownloading: "ダウンロード中…", alDlExtracting: "展開中…",
+    alDlOk: "✅ インストール完了。読み込み中…", alDlFail: "❌ ダウンロード失敗：",
+    alDlNote: "データは Danbooru 公開 API 由来で、プラグインフォルダ内にのみ保存され、個人データは含みません。GALLERY4_DATA_DIR で自前のフォルダを指定したり、tools/build_artist_db.py を実行して自分で取得することもできます。ネットワークが使えない場合は GALLERY4_ARTLIB_URL でミラーを指定できます。",
+    fsNewName: "新しいフォルダ名：", fsEnterFirst: "まずフォルダに入ってください",
+    packFail: "パックに失敗しました", unitImages: " 件",
+    advFoldTitle: "左パネルを折りたたむ・展開", clickCopy: "クリックでコピー", removeTitle: "外す",
+    alreadyAdded: "★ 追加済み", loadFail: "⚠ 読み込み失敗", pageNumPh: "ページ",
+    verTitle: "Ctrl+F5 で強制リロードすると v1.3.4 と表示されます", favDefaultName: "デフォルト", videoWord: "動画",
+    delBtn: "削除", delConfirm: "この画像をゴミ箱へ移動しますか？", delDone: "ゴミ箱へ移動しました", delFail: "削除に失敗しました",
   },
   en: {
     title: "Gallery4ComfyUI", subComfy: "ComfyUI Images", subWebui: "WebUI Images", subFav: "Favorites",
@@ -1070,17 +1073,17 @@ const I18N = {
     advInit: "Select tags or conditions to search", delTitle: "Delete",
     createFail: "Create failed", dragToWhich: "Drag to which folder? (enter name)", noMeta: "(no metadata)",
     hasOutputs: "has outputs", hasModels: "has models",
-    titleAdv: "Advanced Search / 高级搜索", titleFilter: "Filters / 筛选",
-    titleStats: "Statistics / 统计", titleFav: "Favorites only / 仅看收藏",
-    titleRefresh: "Refresh index / 刷新索引",
+    titleAdv: "Advanced Search / 高度な検索", titleFilter: "Filters / 絞り込み",
+    titleStats: "Statistics / 統計", titleFav: "Favorites only / お気に入りのみ",
+    titleRefresh: "Refresh index / インデックス更新",
     quickRefresh: "↻ New",
-    titleQuickRefresh: "Check new images only (same as re-entering) / 只检查新增图片（同重进页面）",
+    titleQuickRefresh: "Check new images only (same as re-entering) / 新しい画像だけチェック（再入場時と同じ）",
     toastQuickOk: "New images checked",
     refreshComfy: "🔄 ComfyUI",
     refreshWebui: "🔄 WebUI",
     refreshVideo: "🔄 🎬",
-    titleTheme: "Toggle theme / 切换主题", titleLang: "Language / 语言",
-    titleSetup: "Settings / 设置", titleFs: "Fullscreen / 全屏观看",
+    titleTheme: "Toggle theme / テーマ切替", titleLang: "Language / 言語",
+    titleSetup: "Settings / 設定", titleFs: "Fullscreen / 全画面表示",
     toastAdded: "✅ Added to 「", toastRemoved: "Removed from 「", toastCopyOk: "Prompt copied", toastImgCopyOk: "Image copied",
     toastImgCopyFail: "Copy image failed", toastFolderExists: "Folder already exists", toastFolderEmpty: "Name cannot be empty",
     setupTitle: "Stable Diffusion WebUI Settings",
@@ -1119,10 +1122,12 @@ const I18N = {
     advFoldTitle: "Collapse / expand left panel", clickCopy: "Click to copy", removeTitle: "Remove",
     alreadyAdded: "★ Added", loadFail: "⚠ Failed to load", pageNumPh: "Page",
     verTitle: "Hard-refresh (Ctrl+F5) to see v1.3.4", favDefaultName: "Favorites", videoWord: "Video",
+    delBtn: "Delete", delConfirm: "Move this image to the trash?", delDone: "Moved to trash", delFail: "Delete failed",
   }
 };
-let LANG = localStorage.getItem("gallery4comfyui-lang") || "zh";
-function t(key){ return (I18N[LANG] && I18N[LANG][key]) || I18N.zh[key] || key; }
+let LANG = localStorage.getItem("gallery4comfyui-lang") || "ja";
+if(LANG === "zh") LANG = "ja";
+function t(key){ return (I18N[LANG] && I18N[LANG][key]) || I18N.ja[key] || key; }
 // 「默认收藏」是收藏夹的存储键（写在 userdata/folders.json 里），翻译它会让老用户的收藏夹失效；
 // 所以只在**显示**时按语言换名。
 function favName(n){ return n === "默认收藏" ? t("favDefaultName") : n; }
@@ -1157,11 +1162,43 @@ const LABEL_EN = {
   "原创为主": "Mostly original", "原创/同人混合": "Mixed original / fanart", "同人为主": "Mostly fanart",
   "无版权标签": "No copyright tags",
 };
+const LABEL_JA = {
+  "女性主体": "女性中心", "男性主体": "男性中心", "双人/CP": "二人・CP",
+  "群像/多人": "群像・複数人", "非人物/静物": "非人物・静物", "校园": "学園",
+  "制服/职场": "制服・職場", "女仆/侍女": "メイド", "和风": "和風",
+  "中式": "中華風", "奇幻/魔法": "ファンタジー・魔法", "科幻/机甲": "SF・メカ",
+  "军事/枪械": "軍事・銃器", "战斗/动作": "戦闘・アクション", "日常/治愈": "日常・癒し",
+  "恐怖/猎奇": "ホラー・グロテスク", "音乐/偶像": "音楽・アイドル", "体育/运动": "スポーツ",
+  "自然/风景": "自然・風景", "都市/街景": "都市・街並み", "兽耳/亚人": "ケモミミ・亜人",
+  "兽人/furry": "ケモノ・furry", "百合/GL": "百合・GL", "BL/腐向": "BL・腐向け",
+  "恋爱/情感": "恋愛・感情", "泳装/内衣": "水着・下着", "裸体/暴露": "裸体・露出",
+  "角色扮演/异装": "コスプレ・女装", "神话/宗教": "神話・宗教", "历史/复古": "歴史・レトロ",
+  "手足/局部": "手足・局部アップ", "体型特征": "体型特徴", "眼镜": "眼鏡",
+  "线稿/速写": "線画・スケッチ", "素描/炭笔": "デッサン・木炭", "水彩": "水彩",
+  "传统绘画": "伝統画材", "厚涂/数码绘": "厚塗り・デジタル", "赛璐璐/平涂": "セル画・ベタ塗り",
+  "像素画": "ドット絵", "3D/渲染": "3D・レンダリング", "单色/灰度": "モノクロ・グレースケール",
+  "抽象/几何": "抽象・幾何学", "拼贴/混合": "コラージュ・混合技法", "极简/留白": "ミニマル・余白",
+  "漫画分镜": "漫画コマ割り", "特效/后期": "エフェクト・後処理", "复古/流行": "レトロ・ポップ",
+  "光影/氛围": "光と影・雰囲気", "单人立绘": "単独立ち絵", "肖像/半身": "肖像・バストアップ",
+  "场景插画": "シーンイラスト", "漫画/多格": "漫画・複数コマ", "差分/变体": "差分・バリエーション",
+  "表情/表演": "表情・演技", "姿势/动态": "ポーズ・動き", "俯视/仰视": "俯瞰・アオリ",
+  "设定/图解": "設定資料・図解", "像素/复古画师": "ドット絵・レトロ絵師", "单色线稿派": "モノクロ線画派",
+  "3D/拟真渲染": "3D・フォトリアル", "漫画/剧情向": "漫画・ストーリー系", "场景/背景插画师": "シーン・背景絵師",
+  "传统手绘媒介": "伝統手描き画材", "百合专精": "百合専門", "BL/腐向专精": "BL専門",
+  "R18情色向画师": "R18・エロ系絵師", "机甲/军事题材": "メカ・軍事題材", "奇幻/魔法题材": "ファンタジー・魔法題材",
+  "兽耳/亚人专精": "ケモミミ専門", "日常/治愈系": "日常・癒し系", "原创角色设计师": "オリジナルキャラデザイナー",
+  "同人角色专精": "同人キャラ専門", "综合向插画师": "総合イラストレーター", "全年龄向": "全年齢向け",
+  "轻度色气": "軽い色気", "情色向": "エロ向け", "硬核R18": "ハードR18",
+  "原创为主": "オリジナル中心", "原创/同人混合": "オリジナル・同人混合", "同人为主": "同人中心",
+  "无版权标签": "版権tagなし",
+};
 // 定性标签翻译：支持单个标签、以及 " · " / "/" 拼接的复合串。
 // 命中不了的原样返回（specialty/sex_tags 是自由组合词，只能部分命中）。
 function tl(s){
-  if(LANG !== "en" || !s) return s;
-  const one = x => LABEL_EN[x] || x;
+  if(!s) return s;
+  const MAP = LANG === "en" ? LABEL_EN : (LANG === "ja" ? LABEL_JA : null);
+  if(!MAP) return s;
+  const one = x => MAP[x] || x;
   return String(s).split(" · ").map(part=>part.split("/").map(one).join(" / ")).join(" · ");
 }
 function applyLang(){
@@ -1187,13 +1224,13 @@ function applyLang(){
   });
   // 动态文本按钮
   const langBtn = document.getElementById("btnLang");
-  if(langBtn) langBtn.textContent = LANG === "zh" ? "EN" : "中";
+  if(langBtn) langBtn.textContent = LANG === "ja" ? "EN" : "日";
   if(typeof awmTagLabels === "function") awmTagLabels();
   // 语言切换可能改变导航栏高度 → 重算右侧画师串栏的顶部位置
   if(typeof syncSideTop === "function") syncSideTop();
 }
 function switchLang(){
-  LANG = LANG === "zh" ? "en" : "zh";
+  LANG = LANG === "ja" ? "en" : "ja";
   try{ localStorage.setItem("gallery4comfyui-lang", LANG); }catch(e){}
   applyLang();
   // 重渲染动态内容
@@ -1355,19 +1392,19 @@ document.querySelectorAll(".srctab").forEach(b=>{
     b.classList.add("on");
     if(b.dataset.src === "fav"){
       showView("fav");
-      $("srcLabel").textContent = LANG === "zh" ? "收藏" : "Favorites";
+      $("srcLabel").textContent = LANG === "ja" ? "お気に入り" : "Favorites";
       loadFolders(); loadFavChains(); loadFavGrid(true);
       return;
     }
     if(b.dataset.src === "artist"){
       showView("artist");
-      $("srcLabel").textContent = LANG === "zh" ? "🎨 画师" : "🎨 Artists";
+      $("srcLabel").textContent = LANG === "ja" ? "🎨 絵師" : "🎨 Artists";
       loadArtists();
       return;
     }
     if(b.dataset.src === "artlib"){
       showView("artlib");
-      $("srcLabel").textContent = LANG === "zh" ? "🌐 Danbooru 画师库" : "🌐 Danbooru Artists";
+      $("srcLabel").textContent = LANG === "ja" ? "🌐 Danbooru 絵師DB" : "🌐 Danbooru Artists";
       artlibEnsure();   // 懒加载：首次点开才请求
       return;
     }
@@ -1465,6 +1502,15 @@ async function load(reset){
   }catch(e){ $("loading").textContent = t("loading") + " ✖"; }
   LOADING = false;
 }
+async function delImage(src, file, el){
+  if(!confirm(t("delConfirm"))) return;
+  try{
+    const r = await api("/api/delete", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({source: src, file})});
+    if(!r.ok) throw new Error("failed");
+    el.remove();
+    showToast("🗑 " + t("delDone"));
+  }catch(e){ showToast("⚠ " + t("delFail")); }
+}
 function mkItem(it, src, items, ctx){
   const d = document.createElement("div"); d.className = "item";
   d.draggable = true;
@@ -1494,6 +1540,10 @@ function mkItem(it, src, items, ctx){
   }
   const fm = document.createElement("span"); fm.className = "favmark"; fm.textContent = "★";
   d.appendChild(badge); d.appendChild(media); d.appendChild(meta); d.appendChild(fm);
+  const del = document.createElement("button");
+  del.className = "delbtn"; del.type = "button"; del.textContent = "🗑"; del.title = t("delBtn");
+  del.onclick = e=>{ e.stopPropagation(); delImage(src, it.file, d); };
+  d.appendChild(del);
   d.onclick = ()=>{
     if(SEL.size){ toggleSel(d, it, src); updateSelBars(); return; }
     const list = items || CUR_ITEMS;
@@ -1590,7 +1640,7 @@ async function loadLoras(){
 function buildLoraTree(){
   const tree = $("loraTree");
   const cur = $("loraSelVal").value;
-  const root = {path:"", name:t("loraRoot")||"根目录", children:{}, items:[]};
+  const root = {path:"", name:t("loraRoot")||"ルート", children:{}, items:[]};
   LORA_ITEMS.forEach(it=>{
     const folder = (it.folder||"").replace(/\\/g,"/");
     const parts = folder ? folder.split("/").filter(Boolean) : [];
@@ -1609,7 +1659,7 @@ function buildLoraTree(){
   allRow.onclick = (e)=>{ e.stopPropagation(); selectLora("", allRow); };
   tree.appendChild(allRow);
   const hint = document.createElement("div"); hint.className = "tree-hint";
-  hint.textContent = LANG === "zh" ? "文件夹默认折叠，点击展开" : "Folders collapsed; click to expand";
+  hint.textContent = LANG === "ja" ? "フォルダは既定で折りたたみ。クリックで展開" : "Folders collapsed; click to expand";
   tree.appendChild(hint);
   // 统计某子树的叶子总数（仅文件夹数，不递归数叶子子树——只展示直接数量即可）
   const render = (node, depth)=>{
@@ -1645,7 +1695,7 @@ function buildLoraTree(){
   };
   render(root, 0);
   if(LORA_ITEMS.length === 0){
-    tree.innerHTML = `<div class="tree-empty">${LANG === "zh" ? "没有 LoRA 数据" : "No LoRA data"}</div>`;
+    tree.innerHTML = `<div class="tree-empty">${LANG === "ja" ? "LoRA データがありません" : "No LoRA data"}</div>`;
   }
 }
 function countLoras(node){
@@ -1702,7 +1752,7 @@ async function refreshIndex(source, force){
   $("indexBar").hidden = false;
   $("indexFill").style.width = "0%";
   const srcName = source === "comfyui" ? "ComfyUI" : source === "video" ? t("videoWord") : "WebUI";
-  $("indexText").textContent = (force ? (LANG === "zh" ? "📊 重建 " + srcName + " 索引中：" : "📊 Rebuilding " + srcName + ": ") : t("indexBuilding")) + "0%";
+  $("indexText").textContent = (force ? (LANG === "ja" ? "📊 " + srcName + " のインデックスを再構築中：" : "📊 Rebuilding " + srcName + ": ") : t("indexBuilding")) + "0%";
   const scanParam = force ? "force=1" : "refresh=1";
   try{
     // 只刷新指定的 source
@@ -1732,13 +1782,13 @@ async function refreshIndex(source, force){
         if($("artistView") && !$("artistView").hidden){ try{ await loadArtists(); }catch(e){} }
         // 画师库视图：列表来自 Danbooru 数据无需重载，但本地预览封面依赖索引，刷新一次
         if($("artlibView") && !$("artlibView").hidden){ try{ artlibPreviews(); }catch(e){} }
-        showToast("🔄 " + srcName + " " + (LANG === "zh" ? "索引已刷新" : "refreshed"));
+        showToast("🔄 " + srcName + " " + (LANG === "ja" ? "インデックスを更新しました" : "refreshed"));
       }catch(e){ clearInterval(_refreshTimer); _refreshTimer = null; $("indexBar").hidden = true; }
     }, 1500);
   }catch(e){
     clearInterval(_refreshTimer); _refreshTimer = null;
     $("indexBar").hidden = true;
-    showToast("⚠ " + srcName + " " + (LANG === "zh" ? "刷新失败" : "refresh failed"));
+    showToast("⚠ " + srcName + " " + (LANG === "ja" ? "更新に失敗しました" : "refresh failed"));
   }finally{
     btn.style.pointerEvents = ""; btn.style.opacity = "";
   }
@@ -1759,7 +1809,7 @@ async function quickRefresh(){
   const btn = $("btnQuickRefresh");
   if(btn){ btn.style.pointerEvents = "none"; btn.style.opacity = "0.5"; }
   $("indexBar").hidden = false; $("indexFill").style.width = "0%";
-  $("indexText").textContent = LANG === "zh" ? "↻ 检查新增图片…" : "↻ Checking new images…";
+  $("indexText").textContent = LANG === "ja" ? "↻ 新しい画像をチェック中…" : "↻ Checking new images…";
   const t0 = Date.now();
   try{
     // 显式 refresh=1（增量）：旧图走缓存零重解析，只解析新增/变更的文件
@@ -1795,7 +1845,7 @@ async function quickRefresh(){
   }catch(e){
     if(_quickTimer){ clearInterval(_quickTimer); _quickTimer = null; }
     $("indexBar").hidden = true;
-    showToast("⚠ " + (LANG === "zh" ? "检查失败" : "check failed"));
+    showToast("⚠ " + (LANG === "ja" ? "チェックに失敗しました" : "check failed"));
   }finally{
     if(btn){ btn.style.pointerEvents = ""; btn.style.opacity = ""; }
   }
@@ -2129,7 +2179,7 @@ async function loadFavGrid(reset){
     $("ftName").textContent = title || "";
     $("favCount").textContent = (t("countTotal") ? t("countTotal") + " " : "") + total + (t("countOf") ? " " + t("countOf") : "");
     const grid = $("favGrid"); grid.innerHTML = "";
-    if(!slice.length) grid.innerHTML = '<div class="empty">' + (chain ? (LANG === "zh" ? "该画师串成员暂无本地图片" : "No local images for this chain") : t("favEmpty")) + '</div>';
+    if(!slice.length) grid.innerHTML = '<div class="empty">' + (chain ? (LANG === "ja" ? "この絵師チェーンのメンバーにはまだローカル画像がありません" : "No local images for this chain") : t("favEmpty")) + '</div>';
     FAV_ITEMS = slice;
     LB_FAV_ALL = items;
     const ctx = favLbCtx();
@@ -2371,7 +2421,7 @@ async function renderLbArtists(it){
   box.hidden = false;
   const lbl = document.createElement("span");
   lbl.className = "lb-art-label";
-  lbl.textContent = LANG === "zh" ? "画师" : "Artist";
+  lbl.textContent = LANG === "ja" ? "絵師" : "Artist";
   box.appendChild(lbl);
   const favs = await artistFavSet();
   if(LB_ITEMS[LB_IDX] !== it) return;   // 等待期间用户已切图
@@ -2381,7 +2431,7 @@ async function renderLbArtists(it){
     const btn = document.createElement("button");
     btn.className = "lb-art-fav" + (favs.has(artSelKey(name)) ? " on" : "");
     btn.textContent = "★";
-    btn.title = LANG === "zh" ? "收藏画师" : "Favorite artist";
+    btn.title = LANG === "ja" ? "絵師をお気に入り" : "Favorite artist";
     const nm = document.createElement("span");
     nm.className = "lb-art-name";
     nm.textContent = name;
@@ -2393,7 +2443,7 @@ async function renderLbArtists(it){
       btn.classList.toggle("on", on);
       if(on) favs.add(artSelKey(name)); else favs.delete(artSelKey(name));
       try{ await api("/api/artists/fav", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag: name, on})}); }catch(err){}
-      showToast("★ " + (LANG === "zh" ? (on ? "已收藏画师：" : "已取消收藏画师：") : (on ? "Favorited: " : "Unfavorited: ")) + name);
+      showToast("★ " + (LANG === "ja" ? (on ? "絵師をお気に入りしました：" : "絵師のお気に入りを解除しました：") : (on ? "Favorited: " : "Unfavorited: ")) + name);
       // 画师页已渲染时同步卡片上的 ★
       const d = document.querySelector(`.artist-card[data-key="${CSS.escape(artSelKey(name))}"]`);
       if(d){ const f = d.querySelector(".ac-fav"); if(f) f.classList.toggle("on", on); }
@@ -2409,7 +2459,7 @@ async function artOpenLightbox(a, startFile){
   try{
     const r = await api(`/api/gallery?source=comfyui&artist=${encodeURIComponent(name)}&sort=newest&page=1&page_size=1000`);
     const items = (r.items || []).filter(x=>x && x.file);
-    if(!items.length){ showToast((LANG === "zh" ? "本库没有该画师的作品：" : "No local works for ") + name); return; }
+    if(!items.length){ showToast((LANG === "ja" ? "この絵師の作品はローカルにありません：" : "No local works for ") + name); return; }
     let idx = 0;
     if(startFile){ const i = items.findIndex(x=>x.file === startFile); if(i >= 0) idx = i; }
     // 画师作品一次性取回（上限 1000），用同一套分页引擎喂给灯箱；
@@ -2786,7 +2836,7 @@ async function loadArtists(){
     const r = await api(`/api/artists?source=comfyui&sort=${$("artistSort").value}&search=${encodeURIComponent($("artistSearch").value)}&page=${ART_PAGE}&page_size=${ART_PAGE_SIZE}&fav=${favOnly}`);
     ARTISTS = r.items || [];
     ART_TOTAL = r.total || 0;
-    $("artistHint").textContent = `${LANG === "zh" ? "共" : ""} ${ART_TOTAL} ${LANG === "zh" ? "位画师" : "artists"}`;
+    $("artistHint").textContent = `${LANG === "ja" ? "" : ""} ${ART_TOTAL} ${LANG === "ja" ? "人の絵師" : "artists"}`;
     renderArtists();
     renderArtistPager();
   }catch(e){}
@@ -2817,7 +2867,7 @@ $("artPgLast").onclick = ()=>{ ART_PAGE = Math.max(1, Math.ceil(ART_TOTAL/ART_PA
 function renderArtists(){
   const grid = $("artistGrid");
   grid.innerHTML = "";
-  if(!ARTISTS.length){ grid.innerHTML = '<div class="empty">' + (LANG === "zh" ? "没有画师 / 请先重建索引" : "No artists / rebuild index first") + '</div>'; return; }
+  if(!ARTISTS.length){ grid.innerHTML = '<div class="empty">' + (LANG === "ja" ? "絵師がいません / 先にインデックスを再構築してください" : "No artists / rebuild index first") + '</div>'; return; }
   ARTISTS.forEach(a=>{
     const key = artSelKey(a.name);
     if(!(key in ART_COVER_LIST)){
@@ -2830,7 +2880,7 @@ function renderArtists(){
     d.className = "artist-card" + (a.count ? "" : " ac-placeholder"); d.dataset.key = key; d.dataset.name = a.name;
     const inSide = AW_LIST.find(x=>artSelKey(x.name)===key);
     const w = a.weight ?? 1;
-    const whtml = `<div class="ac-weight" title="${LANG === "zh" ? "默认权重" : "default weight"}">${LANG === "zh" ? "⚖ " : "⚖ "}${w.toFixed(2)}${inSide ? " ·★" : ""}</div>`;
+    const whtml = `<div class="ac-weight" title="${LANG === "ja" ? "デフォルトウェイト" : "default weight"}">${LANG === "ja" ? "⚖ " : "⚖ "}${w.toFixed(2)}${inSide ? " ·★" : ""}</div>`;
     d.innerHTML = `
       <div class="ac-cover">
         <img src="${coverSrc}" loading="lazy" alt="">
@@ -2848,7 +2898,7 @@ function renderArtists(){
         })()}
         <div class="ac-tag">${esc(a.display || "@" + a.name)}</div>
         <div class="ac-sub">
-          <span class="cnt" title="${LANG === "zh" ? (a.db_posts ? `Danbooru 收录 ${Number(a.db_posts).toLocaleString()} · 本库 ${Number(a.count||0).toLocaleString()}` : `本库作品数 ${Number(a.count||0).toLocaleString()}`) : (a.db_posts ? `Danbooru ${Number(a.db_posts).toLocaleString()} · local ${Number(a.count||0).toLocaleString()}` : `local ${Number(a.count||0).toLocaleString()}`)}">🖼 ${a.db_posts ? Number(a.db_posts).toLocaleString() : Number(a.count||0).toLocaleString()}${a.db_posts ? `<small class="cnt-local"> ·本${Number(a.count||0).toLocaleString()}</small>` : ""}</span>
+          <span class="cnt" title="${LANG === "ja" ? (a.db_posts ? `Danbooru 収録 ${Number(a.db_posts).toLocaleString()} · ローカル ${Number(a.count||0).toLocaleString()}` : `ローカル作品数 ${Number(a.count||0).toLocaleString()}`) : (a.db_posts ? `Danbooru ${Number(a.db_posts).toLocaleString()} · local ${Number(a.count||0).toLocaleString()}` : `local ${Number(a.count||0).toLocaleString()}`)}">🖼 ${a.db_posts ? Number(a.db_posts).toLocaleString() : Number(a.count||0).toLocaleString()}${a.db_posts ? `<small class="cnt-local"> ·ローカル${Number(a.count||0).toLocaleString()}</small>` : ""}</span>
           <span>⚖ ${(a.weight??1).toFixed(2)}</span>
         </div>
       </div>`;
@@ -2856,7 +2906,7 @@ function renderArtists(){
     d.querySelector(".ac-prev").onclick = (e)=>{ e.stopPropagation(); artNextCover(a, -1); };
     d.onclick = ()=>{
       // 单击复制画师 tag
-      navigator.clipboard.writeText(artTag(a.name)).then(()=>showToast("📋 " + (LANG === "zh" ? "已复制画师：" : "Copied artist tag: ") + artTag(a.name))).catch(()=>{});
+      navigator.clipboard.writeText(artTag(a.name)).then(()=>showToast("📋 " + (LANG === "ja" ? "コピーしました：" : "Copied artist tag: ") + artTag(a.name))).catch(()=>{});
     };
     d.ondblclick = ()=>{ artAddToSide(a); };
     d.oncontextmenu = (e)=>{ e.preventDefault(); artShowCtx(e, a); };
@@ -2903,18 +2953,18 @@ function artShowCtx(e, a){
   const w = a.weight ?? 1;
   menu.innerHTML = `
     <div class="ctx-item" data-act="info"><span class="ic">ℹ</span>${t("aiInfo")}</div>
-    <div class="ctx-item" data-act="cover"><span class="ic">🖼</span>${LANG === "zh" ? "设置当前图为封面" : "Set current as cover"}</div>
-    <div class="ctx-item" data-act="view"><span class="ic">🔍</span>${LANG === "zh" ? "查看大图" : "View large image"}</div>
-    <div class="ctx-item" data-act="works"><span class="ic">🖼</span>${LANG === "zh" ? "查看全部作品" : "View all works"}</div>
-    <div class="ctx-item" data-act="reset"><span class="ic">↺</span>${LANG === "zh" ? "重置封面为最新" : "Reset cover to newest"}</div>
+    <div class="ctx-item" data-act="cover"><span class="ic">🖼</span>${LANG === "ja" ? "現在の画像をカバーに設定" : "Set current as cover"}</div>
+    <div class="ctx-item" data-act="view"><span class="ic">🔍</span>${LANG === "ja" ? "拡大表示" : "View large image"}</div>
+    <div class="ctx-item" data-act="works"><span class="ic">🖼</span>${LANG === "ja" ? "全作品を見る" : "View all works"}</div>
+    <div class="ctx-item" data-act="reset"><span class="ic">↺</span>${LANG === "ja" ? "カバーを最新にリセット" : "Reset cover to newest"}</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item" data-act="note"><span class="ic">🏷</span>${LANG === "zh" ? "改备注" : "Edit note"}</div>
-    <div class="ctx-item" data-act="weight"><span class="ic">⚖</span>${LANG === "zh" ? `调整默认权重（当前 ${w.toFixed(2)}）` : `Set default weight (now ${w.toFixed(2)})`}</div>
-    <div class="ctx-item" data-act="copy"><span class="ic">📋</span>${LANG === "zh" ? "复制画师 tag" : "Copy artist tag"}</div>
-    <div class="ctx-item" data-act="copyw"><span class="ic">⚖</span>${LANG === "zh" ? "复制 tag + 权重" : "Copy tag + weight"}</div>
+    <div class="ctx-item" data-act="note"><span class="ic">🏷</span>${LANG === "ja" ? "メモを編集" : "Edit note"}</div>
+    <div class="ctx-item" data-act="weight"><span class="ic">⚖</span>${LANG === "ja" ? `デフォルトウェイト調整（現在 ${w.toFixed(2)}）` : `Set default weight (now ${w.toFixed(2)})`}</div>
+    <div class="ctx-item" data-act="copy"><span class="ic">📋</span>${LANG === "ja" ? "絵師tagをコピー" : "Copy artist tag"}</div>
+    <div class="ctx-item" data-act="copyw"><span class="ic">⚖</span>${LANG === "ja" ? "tagとウェイトをコピー" : "Copy tag + weight"}</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item" data-act="add"><span class="ic">➕</span>${LANG === "zh" ? "添加到权重栏" : "Add to weight bar"}</div>
-    <div class="ctx-item" data-act="fav"><span class="ic">★</span>${a.fav ? (LANG === "zh" ? "取消收藏画师" : "Unfavorite artist") : (LANG === "zh" ? "收藏画师" : "Favorite artist")}</div>`;
+    <div class="ctx-item" data-act="add"><span class="ic">➕</span>${LANG === "ja" ? "ウェイト欄に追加" : "Add to weight bar"}</div>
+    <div class="ctx-item" data-act="fav"><span class="ic">★</span>${a.fav ? (LANG === "ja" ? "絵師のお気に入りを解除" : "Unfavorite artist") : (LANG === "ja" ? "絵師をお気に入り" : "Favorite artist")}</div>`;
   menu.classList.add("show");
   menu.style.left = Math.min(e.clientX, window.innerWidth - 230) + "px";
   menu.style.top = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 10) + "px";
@@ -2932,27 +2982,27 @@ function aiCard(title, body){
 }
 function renderAiInfo(){
   try{
-  const a = AI.item, isZh = LANG === "zh";
+  const a = AI.item, isZh = LANG === "ja";
   const tag = afBase(a.name);
   let h = "";
   if(AI.kind === "artlib"){
     const eroPct = a.ero_ratio ? Math.round((a.ero_ratio||0)*100) + "%" : "";
     const special = tl(a.style || a.specialty || a.profile || a.name);
     const cards = [];
-    cards.push(aiCard("🎨 " + (isZh ? "风格定性" : "Style"), `<div class="ai-spec-big">${esc(special)}</div>`));
+    cards.push(aiCard("🎨 " + (isZh ? "スタイル特性" : "Style"), `<div class="ai-spec-big">${esc(special)}</div>`));
     if((a.strength && a.strength.length) || (a.features && a.features.length)){
-      cards.push(aiCard("✨ " + (isZh ? "擅长 · 特色" : "Strengths & features"),
+      cards.push(aiCard("✨ " + (isZh ? "得意分野 · 特色" : "Strengths & features"),
         ((a.strength && a.strength.length) ? `<div class="ai-tags-flow">${a.strength.map(s=>`<span class="al-chip">${esc(tl(s))}</span>`).join("")}</div>` : "") +
         ((a.features && a.features.length) ? `<div class="ai-tags-flow" style="margin-top:5px">${a.features.map(s=>`<span class="al-chip al-chip-ero">${esc(tl(s))}</span>`).join("")}</div>` : "")));
     }
-    if(a.bio) cards.push(aiCard("📄 " + (isZh ? "简介" : "About"), `<div class="ai-v">${esc(a.bio)}</div>`));
+    if(a.bio) cards.push(aiCard("📄 " + (isZh ? "紹介" : "About"), `<div class="ai-v">${esc(a.bio)}</div>`));
     if(a.sources && a.sources.length){
-      cards.push(aiCard("🔗 " + (isZh ? "来源" : "Sources"),
+      cards.push(aiCard("🔗 " + (isZh ? "出典" : "Sources"),
         a.sources.map(u=>`<div class="ai-row"><span class="ai-v"><a href="${esc(u)}" target="_blank" style="color:var(--accent)">${esc(u)}</a></span></div>`).join("") +
-        (a.style_checked ? `<div class="ai-row"><span class="ai-k">${isZh ? "查证于" : "checked"}</span><span class="ai-v">${esc(a.style_checked)}</span></div>` : "")));
+        (a.style_checked ? `<div class="ai-row"><span class="ai-k">${isZh ? "確認元" : "checked"}</span><span class="ai-v">${esc(a.style_checked)}</span></div>` : "")));
     }
     cards.push(aiCard("📊 " + t("aiCount"),
-      aiRow(t("aiCount"), a.posts ? a.posts.toLocaleString() + (isZh ? " 张" : " posts") : "") +
+      aiRow(t("aiCount"), a.posts ? a.posts.toLocaleString() + (isZh ? " 件" : " posts") : "") +
       aiRow(t("aiRating"), tl(a.rating || "")) +
       aiRow(t("aiEroRatio"), eroPct)));
     if(a.sex_tags && a.sex_tags.length)
@@ -2971,7 +3021,7 @@ function renderAiInfo(){
       aiRow(t("aiCrypto"), a.crypto || "") +
       aiRow(t("aiSig"), a.sig || "") +
       (a.url ? aiRow(t("aiUrl"), a.url, true) : "") +
-      (a.deprecated ? aiRow(t("aiDeprecated"), isZh ? "⚠ 已废弃" : "⚠ deprecated") : "")));
+      (a.deprecated ? aiRow(t("aiDeprecated"), isZh ? "⚠ 廃止済み" : "⚠ deprecated") : "")));
     h = cards.join("");
   } else {
     const w = a.weight ?? 1;
@@ -2980,31 +3030,31 @@ function renderAiInfo(){
     const cards = [];
     // 风格定性（查证结果优先，其次备注）
     const styleLine = tl(a.style || a.note || a.name);
-    cards.push(aiCard("🎨 " + (isZh ? "风格定性" : "Style"),
+    cards.push(aiCard("🎨 " + (isZh ? "スタイル特性" : "Style"),
       `<div class="ai-spec-big">${esc(styleLine)}</div>` +
       (a.style && a.note ? aiRow(t("aiNote"), a.note) : "")));
     // 擅长 + 特色（标签形式）
     if((a.strength && a.strength.length) || (a.features && a.features.length)){
-      cards.push(aiCard("✨ " + (isZh ? "擅长 · 特色" : "Strengths & features"),
+      cards.push(aiCard("✨ " + (isZh ? "得意分野 · 特色" : "Strengths & features"),
         ((a.strength && a.strength.length) ? `<div class="ai-tags-flow">${a.strength.map(s=>`<span class="al-chip">${esc(tl(s))}</span>`).join("")}</div>` : "") +
         ((a.features && a.features.length) ? `<div class="ai-tags-flow" style="margin-top:5px">${a.features.map(s=>`<span class="al-chip al-chip-ero">${esc(tl(s))}</span>`).join("")}</div>` : "")));
     }
     // 简介（查证撰写的 bio）
-    if(a.bio) cards.push(aiCard("📄 " + (isZh ? "简介" : "About"), `<div class="ai-v">${esc(a.bio)}</div>`));
+    if(a.bio) cards.push(aiCard("📄 " + (isZh ? "紹介" : "About"), `<div class="ai-v">${esc(a.bio)}</div>`));
     // 查证来源
     if(a.sources && a.sources.length){
-      cards.push(aiCard("🔗 " + (isZh ? "来源" : "Sources"),
+      cards.push(aiCard("🔗 " + (isZh ? "出典" : "Sources"),
         a.sources.map(u=>`<div class="ai-row"><span class="ai-v"><a href="${esc(u)}" target="_blank" style="color:var(--accent)">${esc(u)}</a></span></div>`).join("") +
-        (a.style_checked ? `<div class="ai-row"><span class="ai-k">${isZh ? "查证于" : "checked"}</span><span class="ai-v">${esc(a.style_checked)}</span></div>` : "")));
+        (a.style_checked ? `<div class="ai-row"><span class="ai-k">${isZh ? "確認元" : "checked"}</span><span class="ai-v">${esc(a.style_checked)}</span></div>` : "")));
     }
     cards.push(aiCard("📊 " + t("aiCount"),
-      aiRow(t("aiCount"), (a.db_posts ? Number(a.db_posts).toLocaleString() + (isZh ? " 张（Danbooru 收录）" : " (Danbooru)") : "") + (a.count ? (a.db_posts ? ` · ${isZh ? "本库 " : "local "}${Number(a.count).toLocaleString()}` : Number(a.count).toLocaleString() + (isZh ? " 张" : " imgs")) : "")) +
+      aiRow(t("aiCount"), (a.db_posts ? Number(a.db_posts).toLocaleString() + (isZh ? " 件（Danbooru収録）" : " (Danbooru)") : "") + (a.count ? (a.db_posts ? ` · ${isZh ? "ローカル " : "local "}${Number(a.count).toLocaleString()}` : Number(a.count).toLocaleString() + (isZh ? " 件" : " imgs")) : "")) +
       aiRow(t("aiWeight"), w.toFixed(2)) +
-      aiRow(t("aiUsed"), a.used ? (isZh ? "✅ 本库用过" : "✅ used locally") : (isZh ? "❌ 本库未用过（占位）" : "❌ not used yet")) +
-      aiRow(t("aiFav"), a.fav ? (isZh ? "★ 已收藏" : "★ favorited") : (isZh ? "☆ 未收藏" : "☆ not favorited")) +
+      aiRow(t("aiUsed"), a.used ? (isZh ? "✅ ローカル使用あり" : "✅ used locally") : (isZh ? "❌ ローカル未使用（プレースホルダ）" : "❌ not used yet")) +
+      aiRow(t("aiFav"), a.fav ? (isZh ? "★ お気に入り済み" : "★ favorited") : (isZh ? "☆ 未登録" : "☆ not favorited")) +
       aiRow(t("aiLastUse"), lu) +
       aiRow(t("aiFirstUse"), fu) +
-      ((a.cover || "") ? aiRow(isZh ? "封面" : "Cover", a.cover) : "")));
+      ((a.cover || "") ? aiRow(isZh ? "カバー" : "Cover", a.cover) : "")));
     if(a.note && a.style) cards.push(aiCard("🏷 " + t("aiNote"), `<div class="ai-v">${esc(a.note)}</div>`));
     h = cards.join("");
   }
@@ -3051,8 +3101,8 @@ function renderAiGrid(){
       hint.innerHTML = `
       <div class="ai-empty">
         <div class="ai-empty-ic">🎨</div>
-        <div class="ai-empty-t">${LANG === "zh" ? "这位画师在本地还没有作品" : "No local works yet"}</div>
-        <div class="ai-empty-s">${LANG === "zh" ? "在 ComfyUI 里用过这个 @tag 出图后，「作品库」会自动收集这里" : "Use @tag in ComfyUI and works will appear here"}</div>
+        <div class="ai-empty-t">${LANG === "ja" ? "この絵師の作品はまだローカルにありません" : "No local works yet"}</div>
+        <div class="ai-empty-s">${LANG === "ja" ? "ComfyUIでこの @tag を使って生成すると、「作品一覧」に自動で集まります" : "Use @tag in ComfyUI and works will appear here"}</div>
       </div>`;
     }
     return;
@@ -3069,7 +3119,7 @@ function renderAiGrid(){
     grid.appendChild(d);
   });
   const n = $("aiGridCount");
-  if(n) n.textContent = (LANG === "zh" ? "共" : "") + " " + AI.works.length + (AI.total > AI.works.length ? " / " + AI.total : "") + (LANG === "zh" ? " 张" : " imgs");
+  if(n) n.textContent = (LANG === "ja" ? "" : "") + " " + AI.works.length + (AI.total > AI.works.length ? " / " + AI.total : "") + (LANG === "ja" ? " 件" : " imgs");
   }catch(e){ console.error("renderAiGrid:", e); }
 }
 function aiOpenBig(it){
@@ -3100,7 +3150,7 @@ function aiOpenBig(it){
 function showArtInfo(a, kind){
   AI = { kind, item: a, works: [], total: 0, selFile: "" };
   try{
-    const isZh = LANG === "zh";
+    const isZh = LANG === "ja";
     const tag = afBase(a.name);
     const hasLocal = kind === "local" || Boolean(AL_PREVIEWS[(a.name||"").toLowerCase()] || a.cover);
     const nmStyle = a.style || a.note || a.name;
@@ -3108,7 +3158,7 @@ function showArtInfo(a, kind){
     $("aiName").title = $("aiName").textContent;
     $("aiTag").textContent = tag;
     const badge = $("aiBadge");
-    if(badge){ badge.hidden = !hasLocal; badge.textContent = isZh ? "本地用过" : "local"; }
+    if(badge){ badge.hidden = !hasLocal; badge.textContent = isZh ? "ローカル使用あり" : "local"; }
     // 初始态：右简介 / 左图库
     const big = $("aiBig"), gwrap = $("aiGridWrap");
     if(big) big.hidden = true;
@@ -3163,11 +3213,11 @@ $("artistCtx").addEventListener("click", async (e)=>{
     // 备注编辑：菜单内展开输入表单（不关闭）
     const n0 = a.note || "";
     menu.innerHTML = `
-      <div class="ctx-wtitle">🏷 ${LANG === "zh" ? "画师备注" : "Artist note"}</div>
+      <div class="ctx-wtitle">🏷 ${LANG === "ja" ? "絵師メモ" : "Artist note"}</div>
       <div class="ctx-wrow" style="flex-direction:column;align-items:stretch">
         <textarea id="ctxNInput" rows="2" style="flex:1;min-width:0;padding:6px 8px;font-size:13px;font-family:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt)">${esc(n0)}</textarea>
         <div style="display:flex;gap:6px">
-          <button class="iconbtn" id="ctxNSave" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">${LANG === "zh" ? "保存" : "Save"}</button>
+          <button class="iconbtn" id="ctxNSave" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">${LANG === "ja" ? "保存" : "Save"}</button>
           <button class="iconbtn" id="ctxNCancel">✕</button>
         </div>
       </div>`;
@@ -3180,7 +3230,7 @@ $("artistCtx").addEventListener("click", async (e)=>{
       const d = document.querySelector(`.artist-card[data-key="${CSS.escape(artSelKey(a.name))}"]`);
       if(d){ const nm = d.querySelector(".ac-name"); if(nm) nm.textContent = v || a.name; }
       menu.classList.remove("show");
-      showToast("🏷 " + (LANG === "zh" ? "备注已保存" : "Note saved"));
+      showToast("🏷 " + (LANG === "ja" ? "メモを保存しました" : "Note saved"));
     };
     $("ctxNSave").onclick = finalizeNote;
     $("ctxNCancel").onclick = ()=>menu.classList.remove("show");
@@ -3191,10 +3241,10 @@ $("artistCtx").addEventListener("click", async (e)=>{
     // 权重编辑：菜单内展开输入表单（不关闭）
     const w0 = (a.weight ?? 1).toFixed(5);
     menu.innerHTML = `
-      <div class="ctx-wtitle">⚖ ${LANG === "zh" ? "调整默认权重" : "Set default weight"}</div>
+      <div class="ctx-wtitle">⚖ ${LANG === "ja" ? "デフォルトウェイト調整" : "Set default weight"}</div>
       <div class="ctx-wrow">
         <input type="number" id="ctxWInput" min="0.5" max="2" step="0.00001" value="${w0}">
-        <button class="iconbtn" id="ctxWSave" style="background:var(--accent);color:#fff;border-color:var(--accent)">${LANG === "zh" ? "保存" : "Save"}</button>
+        <button class="iconbtn" id="ctxWSave" style="background:var(--accent);color:#fff;border-color:var(--accent)">${LANG === "ja" ? "保存" : "Save"}</button>
         <button class="iconbtn" id="ctxWCancel">✕</button>
       </div>`;
     const inp = $("ctxWInput");
@@ -3220,7 +3270,7 @@ $("artistCtx").addEventListener("click", async (e)=>{
         if(sub2) sub2.textContent = "⚖ " + v.toFixed(2);
       }
       menu.classList.remove("show");
-      showToast("⚖ " + (LANG === "zh" ? "默认权重已更新：" : "Default weight: ") + v.toFixed(5));
+      showToast("⚖ " + (LANG === "ja" ? "デフォルトウェイトを更新しました：" : "Default weight: ") + v.toFixed(5));
     };
     $("ctxWSave").onclick = finalize;
     $("ctxWCancel").onclick = ()=>menu.classList.remove("show");
@@ -3232,7 +3282,7 @@ $("artistCtx").addEventListener("click", async (e)=>{
     showArtInfo(a, "local");
   } else if(act === "cover"){
     await api("/api/artists/cover", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag: a.name, file: cur})});
-    showToast("🖼 " + (LANG === "zh" ? "已设为封面" : "Cover set"));
+    showToast("🖼 " + (LANG === "ja" ? "カバーに設定しました" : "Cover set"));
     loadArtists();
   } else if(act === "view"){
     artOpenLightbox(a, cur);
@@ -3257,7 +3307,7 @@ $("artistCtx").addEventListener("click", async (e)=>{
     try{ await api("/api/artists/fav", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag: a.name, on})}); }catch(err){}
     const d = document.querySelector(`.artist-card[data-key="${CSS.escape(artSelKey(a.name))}"]`);
     if(d){ const f = d.querySelector(".ac-fav"); if(f) f.classList.toggle("on", on); }
-    showToast("★ " + (LANG === "zh" ? (on ? "已收藏" : "已取消收藏") : (on ? "Favorited" : "Unfavorited")) + ": " + artTag(a.name));
+    showToast("★ " + (LANG === "ja" ? (on ? "お気に入りに追加" : "お気に入りから解除") : (on ? "Favorited" : "Unfavorited")) + ": " + artTag(a.name));
   }
 });
 // 打开画师作品弹窗
@@ -3275,9 +3325,9 @@ async function artOpenWorks(a){
   await artLoadWorksTags(a.name);
 }
 function awmTagLabels(){
-  const isZh = LANG === "zh";
-  $("awmTagMaxLbl").textContent = isZh ? "屏蔽 >" : "Hide >";
-  $("awmTagMaxUnit").textContent = isZh ? "次" : "uses";
+  const isZh = LANG === "ja";
+  $("awmTagMaxLbl").textContent = isZh ? "非表示 >" : "Hide >";
+  $("awmTagMaxUnit").textContent = isZh ? "回" : "uses";
 }
 async function artLoadWorksTags(name){
   try{
@@ -3286,12 +3336,12 @@ async function artLoadWorksTags(name){
     const items = r.items || [];
     const box = $("awmTagsBody"); box.innerHTML = "";
     $("awmTags").hidden = false;
-    if(!items.length){ box.innerHTML = '<div class="awm-tags-empty">' + (LANG === "zh" ? "暂无 tag 统计" : "No tag stats") + '</div>'; return; }
+    if(!items.length){ box.innerHTML = '<div class="awm-tags-empty">' + (LANG === "ja" ? "tag統計がまだありません" : "No tag stats") + '</div>'; return; }
     items.forEach(t=>{
       const chip = document.createElement("span");
       chip.className = "awm-tag-chip";
       chip.innerHTML = `${esc(t.tag)} <span class="n">x${t.count}</span>`;
-      chip.title = LANG === "zh" ? "点击复制" : "click to copy";
+      chip.title = LANG === "ja" ? "クリックでコピー" : "click to copy";
       chip.onclick = (e)=>{
         e.stopPropagation();
         navigator.clipboard.writeText(t.tag).then(()=>showToast("📋 " + t.tag));
@@ -3317,14 +3367,14 @@ async function artLoadWorksPage(){
     AWM.total = r.total; AWM.pages = Math.max(1, Math.ceil(r.total / AWM.size)); AWM.items = r.items || [];
     // 列表为空时不要让计数与「没有作品」互相打脸（曾出现 1/1 · 0 张）
     $("awmCount").textContent = AWM.total
-      ? `${AWM.page}/${AWM.pages} · ${AWM.total} ${LANG === "zh" ? "张" : "imgs"}`
-      : (LANG === "zh" ? "0 张" : "0 imgs");
+      ? `${AWM.page}/${AWM.pages} · ${AWM.total} ${LANG === "ja" ? "件" : "imgs"}`
+      : (LANG === "ja" ? "0 件" : "0 imgs");
     renderAWM();
   }catch(e){}
 }
 function renderAWM(){
   const grid = $("awmGrid"); grid.innerHTML = "";
-  if(!AWM.items.length){ grid.innerHTML = '<div class="empty">' + (LANG === "zh" ? "没有作品" : "No works") + '</div>'; return; }
+  if(!AWM.items.length){ grid.innerHTML = '<div class="empty">' + (LANG === "ja" ? "作品がありません" : "No works") + '</div>'; return; }
   AWM.items.forEach(it=>{
     const d = document.createElement("div"); d.className = "item awm-item" + (AWM.selFile === it.file ? " sel" : "");
     d.innerHTML = `<img src="${imgUrl("comfyui", it.file)}" loading="lazy" alt=""><div class="badge">${esc(it.model||"")}</div>`;
@@ -3437,10 +3487,10 @@ function artRenderPrompt(){
   $("awPromptText").value = lines.join(", ");
 }
 $("awDice").onclick = ()=>{
-  if(!AW_LIST.length){ showToast("⚠ " + (LANG === "zh" ? "先添加画师" : "Add artists first")); return; }
+  if(!AW_LIST.length){ showToast("⚠ " + (LANG === "ja" ? "先に絵師を追加してください" : "Add artists first")); return; }
   AW_LIST.forEach(x=>{ x.weight = Math.round((0.5 + Math.random()*1.5)*100000)/100000; });
   artRenderSide();
-  showToast("🎲 " + (LANG === "zh" ? "已随机权重 (0.5~2)" : "Random weights (0.5~2)"));
+  showToast("🎲 " + (LANG === "ja" ? "ウェイトをランダム化しました (0.5~2)" : "Random weights (0.5~2)"));
 };
 $("awClear").onclick = ()=>{ AW_LIST = []; artRenderSide(); };
 // ---------- 画师串收藏 ----------
@@ -3455,7 +3505,7 @@ function renderChains(){
   const box = $("awChainList"); if(!box) return;
   box.innerHTML = "";
   if(!CHAINS.length){
-    box.innerHTML = '<div style="font-size:11.5px;color:var(--dim)">' + (LANG === "zh" ? "还没有收藏的画师串" : "No saved artist chains yet") + '</div>';
+    box.innerHTML = '<div style="font-size:11.5px;color:var(--dim)">' + (LANG === "ja" ? "お気に入りの絵師チェーンはまだありません" : "No saved artist chains yet") + '</div>';
     return;
   }
   CHAINS.forEach(c=>{
@@ -3466,13 +3516,13 @@ function renderChains(){
     d.innerHTML = `${cov}
       <span class="acn" title="${esc(c.prompt || "")}">${esc(c.name)}</span>
       <span class="acc">${(c.artists || []).length}</span>
-      <button class="acx" title="${LANG === "zh" ? "取消收藏" : "Remove"}">✕</button>`;
+      <button class="acx" title="${LANG === "ja" ? "お気に入りから外す" : "Remove"}">✕</button>`;
     d.querySelector(".acn").onclick = ()=>{
       try{
         AW_LIST = (c.artists || []).map(n=>({name: n, display: afBase(n), cover: "", weight: (c.weights || {})[n] ?? 1}));
         artRenderSide();
         $("#awPromptText").value = c.prompt || "";
-        showToast("📋 " + (LANG === "zh" ? "已载入画师串：" : "Loaded: ") + c.name);
+        showToast("📋 " + (LANG === "ja" ? "絵師チェーンを読み込みました：" : "Loaded: ") + c.name);
       }catch(e){}
     };
     d.querySelector(".acx").onclick = async ()=>{
@@ -3483,16 +3533,16 @@ function renderChains(){
   });
 }
 $("awFavChain").onclick = async ()=>{
-  if(!AW_LIST.length){ showToast("⚠ " + (LANG === "zh" ? "画师串是空的" : "Chain is empty")); return; }
-  const def = (AW_LIST.map(x=>x.name).join(", ")).slice(0, 40) || (LANG === "zh" ? "画师串" : "chain");
-  const name = prompt(LANG === "zh" ? "收藏名称" : "Name", def);
+  if(!AW_LIST.length){ showToast("⚠ " + (LANG === "ja" ? "絵師チェーンが空です" : "Chain is empty")); return; }
+  const def = (AW_LIST.map(x=>x.name).join(", ")).slice(0, 40) || (LANG === "ja" ? "絵師チェーン" : "chain");
+  const name = prompt(LANG === "ja" ? "お気に入り名" : "Name", def);
   if(!name || !name.trim()) return;
   const artists = AW_LIST.map(x=>x.name);
   const weights = {}; AW_LIST.forEach(x=>{ weights[x.name] = x.weight; });
   const r = await api("/api/chains/save", {method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({name: name.trim(), prompt: $("awPromptText").value, artists, weights, added: artists})});
   if(r.ok){
-    showToast("★ " + (LANG === "zh" ? "已收藏画师串：" : "Saved: ") + name.trim());
+    showToast("★ " + (LANG === "ja" ? "絵師チェーンをお気に入りしました：" : "Saved: ") + name.trim());
     loadChains(); loadFavChains();
     if($("favChainList") && !$("favView").hidden) loadFavGrid(true);
   } else showToast("⚠ " + (r.error || "fail"));
@@ -3504,7 +3554,7 @@ async function loadFavChains(){
     const list = r.chains || [];
     box.innerHTML = "";
     if(!list.length){
-      box.innerHTML = '<div style="font-size:11.5px;color:var(--dim);padding:4px 6px">' + (LANG === "zh" ? "暂无" : "none") + '</div>';
+      box.innerHTML = '<div style="font-size:11.5px;color:var(--dim);padding:4px 6px">' + (LANG === "ja" ? "なし" : "none") + '</div>';
       return;
     }
     list.forEach(c=>{
@@ -3535,7 +3585,7 @@ $("favFilterArtist").onclick = ()=>setFavFilter("artist");
 $("favFilterChain").onclick = ()=>setFavFilter("chain");
 $("awCopy").onclick = ()=>{
   const t = $("awPromptText").value;
-  if(t)navigator.clipboard.writeText(t).then(()=>showToast("📋 " + (LANG === "zh" ? "提示词已复制" : "Prompt copied")));
+  if(t)navigator.clipboard.writeText(t).then(()=>showToast("📋 " + (LANG === "ja" ? "プロンプトをコピーしました" : "Prompt copied")));
 };
 $("artistSearch").addEventListener("input", debounce(()=>{ ART_PAGE = 1; loadArtists(); }, 300));
 $("artistSort").onchange = ()=>{ ART_PAGE = 1; loadArtists(); };
@@ -3616,7 +3666,7 @@ async function artlibEnsure(){
   if(AL.inited){ return; }
   if(AL.loading){ return; }
   AL.loading = true;
-  $("alGrid").innerHTML = '<div class="empty">' + (LANG === "zh" ? "正在加载画师库（首次较慢）…" : "Loading artist DB (first time is slow)…") + '</div>';
+  $("alGrid").innerHTML = '<div class="empty">' + (LANG === "ja" ? "絵師DBを読み込み中（初回は低速）…" : "Loading artist DB (first time is slow)…") + '</div>';
   try{
     // 数据没装就别去读盘，直接给下载入口
     let st = null;
@@ -3634,7 +3684,7 @@ async function artlibEnsure(){
     fillArtlibFacets();
     await artlibLoad();
   }catch(e){
-    $("alGrid").innerHTML = '<div class="empty">⚠ ' + (LANG === "zh" ? "画师库加载失败" : "Failed to load") + '</div>';
+    $("alGrid").innerHTML = '<div class="empty">⚠ ' + (LANG === "ja" ? "絵師DBの読み込みに失敗しました" : "Failed to load") + '</div>';
   }finally{
     AL.loading = false;
   }
@@ -3679,7 +3729,7 @@ async function artlibLoad(){
   try{
     const r = await api("/api/artlib/search?" + p.toString() + artlibGcParam());
     AL.items = r.items || []; AL.total = r.total || 0;
-    $("alHint").textContent = `${LANG === "zh" ? "共" : ""} ${AL.total.toLocaleString()} ${LANG === "zh" ? "位" : ""}` + (AL.inited ? ` · DB ${AL.facetsTotal.toLocaleString()}` : "");
+    $("alHint").textContent = `${LANG === "ja" ? "" : ""} ${AL.total.toLocaleString()} ${LANG === "ja" ? "人" : ""}` + (AL.inited ? ` · DB ${AL.facetsTotal.toLocaleString()}` : "");
     renderArtlib();
     renderArtlibPager();
     artlibPreviews();   // 异步补本地预览图（不阻塞列表）
@@ -3687,7 +3737,7 @@ async function artlibLoad(){
 }
 function renderArtlib(){
   const grid = $("alGrid"); grid.innerHTML = "";
-  if(!AL.items.length){ grid.innerHTML = '<div class="empty">' + (LANG === "zh" ? "没有匹配的画师" : "No artists") + '</div>'; return; }
+  if(!AL.items.length){ grid.innerHTML = '<div class="empty">' + (LANG === "ja" ? "一致する絵師がいません" : "No artists") + '</div>'; return; }
   AL.items.forEach(a=>{
     const d = document.createElement("div");
     const key = artSelKey(a.name);
@@ -3785,8 +3835,8 @@ async function alSaveCover(a, file, reset){
       AL_COVER_IDX[artSelKey(a.name)] = 0;
     }
     renderArtlib();
-    showToast(reset ? "↺ " + (LANG === "zh" ? "已重置为最新图" : "Reset to newest") : "🖼 " + (LANG === "zh" ? "已设为封面" : "Cover set"));
-  }catch(e){ showToast("⚠ " + (LANG === "zh" ? "设置失败" : "Failed")); }
+    showToast(reset ? "↺ " + (LANG === "ja" ? "最新の画像にリセットしました" : "Reset to newest") : "🖼 " + (LANG === "ja" ? "カバーに設定しました" : "Cover set"));
+  }catch(e){ showToast("⚠ " + (LANG === "ja" ? "設定に失敗しました" : "Failed")); }
 }
 // 画师库预览：本地索引用过该 tag 的图（批量，失败则保持占位）
 let AL_PREVIEWS = {};
@@ -3817,9 +3867,9 @@ function artlibAddToSide(a){
   const key = artSelKey(a.name);
   if(!AW_LIST.find(x=>artSelKey(x.name)===key)){
     AW_LIST.push({name: a.name, display: afBase(a.name), cover: "", weight: 1});
-    showToast("➕ " + (LANG === "zh" ? "已加入画师串：" : "Added: ") + afBase(a.name));
+    showToast("➕ " + (LANG === "ja" ? "絵師チェーンに追加しました：" : "Added: ") + afBase(a.name));
   } else {
-    showToast("ℹ " + (LANG === "zh" ? "已在画师串中" : "Already added"));
+    showToast("ℹ " + (LANG === "ja" ? "既に絵師チェーンにあります" : "Already added"));
   }
   artRenderSide();
 }
@@ -3829,17 +3879,17 @@ function artlibCtx(e, a){
   const inSide = AW_LIST.find(x=>artSelKey(x.name)===a.name);
   menu.innerHTML = `
     <div class="ctx-item" data-al="info"><span class="ic">ℹ</span>${t("aiInfo")}</div>
-    <div class="ctx-item" data-al="add"><span class="ic">➕</span>${LANG === "zh" ? "加入画师串" : "Add to chain"}</div>
-    <div class="ctx-item" data-al="copy"><span class="ic">📋</span>${LANG === "zh" ? "复制 @tag" : "Copy @tag"}</div>
-    <div class="ctx-item" data-al="copyw"><span class="ic">⚖</span>${LANG === "zh" ? "复制 @tag + 权重" : "Copy @tag + weight"}</div>
-    <div class="ctx-item" data-al="view"><span class="ic">🔍</span>${LANG === "zh" ? "查看大图" : "View large image"}</div>
+    <div class="ctx-item" data-al="add"><span class="ic">➕</span>${LANG === "ja" ? "絵師チェーンに追加" : "Add to chain"}</div>
+    <div class="ctx-item" data-al="copy"><span class="ic">📋</span>${LANG === "ja" ? "@tagをコピー" : "Copy @tag"}</div>
+    <div class="ctx-item" data-al="copyw"><span class="ic">⚖</span>${LANG === "ja" ? "@tagとウェイトをコピー" : "Copy @tag + weight"}</div>
+    <div class="ctx-item" data-al="view"><span class="ic">🔍</span>${LANG === "ja" ? "拡大表示" : "View large image"}</div>
     ${alCurrentCover(a) ? `<div class="ctx-sep"></div>
-    <div class="ctx-item" data-al="setcover"><span class="ic">🖼</span>${LANG === "zh" ? "设置当前图为封面" : "Set current as cover"}</div>
-    <div class="ctx-item" data-al="resetcover"><span class="ic">↺</span>${LANG === "zh" ? "重置封面为最新" : "Reset cover to newest"}</div>` : ""}
+    <div class="ctx-item" data-al="setcover"><span class="ic">🖼</span>${LANG === "ja" ? "現在の画像をカバーに設定" : "Set current as cover"}</div>
+    <div class="ctx-item" data-al="resetcover"><span class="ic">↺</span>${LANG === "ja" ? "カバーを最新にリセット" : "Reset cover to newest"}</div>` : ""}
     <div class="ctx-sep"></div>
-    <div class="ctx-item" data-al="posts"><span class="ic">📊</span>${LANG === "zh" ? "作品数" : "Posts"}: ${a.posts.toLocaleString()}</div>
-    ${a.url ? `<div class="ctx-item" data-al="open"><span class="ic">🔗</span>${LANG === "zh" ? "打开 Danbooru 主页" : "Open Danbooru page"}</div>` : ""}
-    ${inSide ? `<div class="ctx-item" data-al="del"><span class="ic">🗑</span>${LANG === "zh" ? "从画师串移除" : "Remove from chain"}</div>` : ""}`;
+    <div class="ctx-item" data-al="posts"><span class="ic">📊</span>${LANG === "ja" ? "作品数" : "Posts"}: ${a.posts.toLocaleString()}</div>
+    ${a.url ? `<div class="ctx-item" data-al="open"><span class="ic">🔗</span>${LANG === "ja" ? "Danbooruページを開く" : "Open Danbooru page"}</div>` : ""}
+    ${inSide ? `<div class="ctx-item" data-al="del"><span class="ic">🗑</span>${LANG === "ja" ? "絵師チェーンから外す" : "Remove from chain"}</div>` : ""}`;
   menu.classList.add("show");
   menu.style.left = Math.min(e.clientX, window.innerWidth - 250) + "px";
   menu.style.top = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 10) + "px";

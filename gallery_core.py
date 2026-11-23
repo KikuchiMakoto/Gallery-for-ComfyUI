@@ -8,7 +8,7 @@ Gallery4ComfyUI · 核心引擎（发布版）
 - 首次运行需配置 SD WebUI 根目录（存于插件 userdata/settings.json）
 零第三方依赖（ComfyUI 环境自带 aiohttp / folder_paths）。
 """
-import os, json, time, zlib, threading, re, random
+import os, json, time, zlib, threading, re, random, shutil, datetime
 
 try:
     import folder_paths
@@ -1127,6 +1127,58 @@ def image_path(source, file):
     if os.path.isfile(fp) and os.path.commonpath([root, fp]) == os.path.normpath(root):
         return fp
     return None
+
+
+TRASH_DIR = os.path.join(USERDATA, "trash")
+
+
+def delete_image(source, file):
+    """画像ファイルを userdata/trash/<source>/ へ移動し、索引と收藏夹からも除去する。
+    完全削除はしない（復旧可能）。戻り値: {"ok": bool, ...}"""
+    fp = image_path(source, file)
+    if not fp:
+        return {"ok": False, "error": "not found"}
+    if source == "comfyui":
+        root = folder_paths.get_output_directory() if folder_paths else None
+    else:
+        root = webui_outputs_dir()
+    rel = os.path.relpath(fp, root) if root else os.path.basename(fp)
+    dest_dir = os.path.join(TRASH_DIR, source, os.path.dirname(rel))
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, os.path.basename(rel))
+    if os.path.exists(dest):
+        base, ext = os.path.splitext(dest)
+        dest = base + "." + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ext
+    shutil.move(fp, dest)
+    # 索引（メモリ＋キャッシュ）から除去
+    snapshot = None
+    with _indexes_lock:
+        st = _indexes.get(source)
+        if st and st.get("entries") is not None:
+            st["entries"] = [e for e in st["entries"] if e.get("file") != file]
+            st["total"] = len(st["entries"])
+            snapshot = list(st["entries"])
+    if snapshot is not None:
+        try:
+            _save_index(source, snapshot)
+        except Exception:
+            pass
+    # 收藏夹（folders.json）から除去
+    try:
+        data = load_folders()
+        changed = False
+        for name in list(data.keys()):
+            items = data.get(name) or []
+            kept = [k for k in items
+                    if not (str(k.get("source", "comfyui")) == source and str(k.get("file", "")) == file)]
+            if len(kept) != len(items):
+                data[name] = kept
+                changed = True
+        if changed:
+            save_folders(data)
+    except Exception:
+        pass
+    return {"ok": True, "trashed": dest}
 
 
 def raw_metadata(source, file):

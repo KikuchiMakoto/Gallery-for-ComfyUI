@@ -11,7 +11,7 @@ app.registerExtension({
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = "打开图库";
+      btn.textContent = "ギャラリーを開く";
       btn.style.cssText = `
         width: 100%;
         padding: 8px 0;
@@ -36,11 +36,11 @@ app.registerExtension({
         const target = cfg || "/gallery4comfyui/";
 
         // 懒启动：先触发索引（幂等），再打开页面
-        setLabel("正在启动图库…", true);
+        setLabel("ギャラリーを起動中…", true);
         try {
           await fetch("/gallery4comfyui/api/boot", { cache: "no-store" });
         } catch (e) { /* ComfyUI 未就绪时静默，页面打开后也会自动触发 */ }
-        setLabel("打开图库", false);
+        setLabel("ギャラリーを開く", false);
         window.open(target, "_blank");
       });
 
