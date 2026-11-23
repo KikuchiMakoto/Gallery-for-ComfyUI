@@ -74,8 +74,9 @@
   .item .sub{font-size:11.5px; color:var(--dim); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .item .favmark{position:absolute; top:6px; right:8px; color:var(--star); font-size:15px; text-shadow:0 1px 3px rgba(0,0,0,.5); display:none}
   .item.faved .favmark{display:block}
-  .item .delbtn{position:absolute; right:8px; bottom:40px; width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:rgba(0,0,0,.45); color:#fff; font-size:14px; line-height:1; cursor:pointer; opacity:.8; z-index:3; display:flex; align-items:center; justify-content:center; padding:0}
-  .item .delbtn:hover{opacity:1; background:#b3261e}
+  .item .delrow{display:flex; justify-content:flex-end; margin-top:4px}
+  .item .delbtn{border:none; border-radius:6px; background:#c62828; color:#fff; font-size:12.5px; line-height:1; cursor:pointer; padding:5px 10px; opacity:.92}
+  .item .delbtn:hover{opacity:1; background:#e53935}
   .item .badge{position:absolute; left:6px; top:6px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 7px; border-radius:6px; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .empty{grid-column:1/-1; text-align:center; color:var(--dim); padding:44px 0}
   .al-inst{grid-column:1/-1; max-width:640px; margin:26px auto; text-align:center; padding:28px 24px; border:1px solid var(--line); border-radius:14px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -1540,10 +1541,11 @@ function mkItem(it, src, items, ctx){
   }
   const fm = document.createElement("span"); fm.className = "favmark"; fm.textContent = "★";
   d.appendChild(badge); d.appendChild(media); d.appendChild(meta); d.appendChild(fm);
+  const delrow = document.createElement("div"); delrow.className = "delrow";
   const del = document.createElement("button");
-  del.className = "delbtn"; del.type = "button"; del.textContent = "🗑"; del.title = t("delBtn");
+  del.className = "delbtn"; del.type = "button"; del.textContent = "🗑 " + t("delBtn"); del.title = t("delBtn");
   del.onclick = e=>{ e.stopPropagation(); delImage(src, it.file, d); };
-  d.appendChild(del);
+  delrow.appendChild(del); meta.appendChild(delrow);
   d.onclick = ()=>{
     if(SEL.size){ toggleSel(d, it, src); updateSelBars(); return; }
     const list = items || CUR_ITEMS;
