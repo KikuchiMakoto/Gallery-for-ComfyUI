@@ -1181,6 +1181,49 @@ def delete_image(source, file):
     return {"ok": True, "trashed": dest}
 
 
+def _trash_stats():
+    total_files = 0
+    total_bytes = 0
+    if os.path.isdir(TRASH_DIR):
+        for dirpath, _dirnames, filenames in os.walk(TRASH_DIR):
+            for name in filenames:
+                try:
+                    total_bytes += os.path.getsize(os.path.join(dirpath, name))
+                    total_files += 1
+                except OSError:
+                    pass
+    return total_files, total_bytes
+
+
+def trash_info():
+    """ゴミ箱の中身（件数と合計サイズ）を返す。"""
+    n, b = _trash_stats()
+    return {"ok": True, "count": n, "bytes": b}
+
+
+def empty_trash():
+    """ゴミ箱の中身を完全に削除する（復旧不可）。"""
+    removed = 0
+    freed = 0
+    if os.path.isdir(TRASH_DIR):
+        for dirpath, _dirnames, filenames in os.walk(TRASH_DIR):
+            for name in filenames:
+                fp = os.path.join(dirpath, name)
+                try:
+                    freed += os.path.getsize(fp)
+                    os.remove(fp)
+                    removed += 1
+                except OSError:
+                    pass
+        for dirpath, _dirnames, _filenames in os.walk(TRASH_DIR, topdown=False):
+            if dirpath != TRASH_DIR:
+                try:
+                    os.rmdir(dirpath)
+                except OSError:
+                    pass
+    return {"ok": True, "removed": removed, "bytes": freed}
+
+
 def raw_metadata(source, file):
     fp = image_path(source, file)
     if not fp:

@@ -862,6 +862,11 @@
         <option value="full" data-i18n="scanFull">全件再構築（毎回低速、インデックス異常時のみ）</option>
       </select>
     </div>
+    <div class="row" style="flex-wrap:wrap; gap:6px; align-items:center">
+      <label data-i18n="trashLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim)">ゴミ箱</label>
+      <span id="trashInfo" style="flex:1; font-size:12.5px; color:var(--dim)"></span>
+      <button class="iconbtn" id="btnTrashEmpty" data-i18n="trashEmpty" style="background:#c62828; border-color:#c62828; color:#fff">ゴミ箱を空にする</button>
+    </div>
     <div class="row">
       <button class="iconbtn" id="btnSetupSave" data-i18n="save" style="flex:1; background:var(--accent); border-color:var(--accent); color:#fff">保存</button>
       <button class="iconbtn" id="btnSetupSkip" data-i18n="skip">スキップ</button>
@@ -1024,7 +1029,7 @@ const I18N = {
     advFoldTitle: "左パネルを折りたたむ・展開", clickCopy: "クリックでコピー", removeTitle: "外す",
     alreadyAdded: "★ 追加済み", loadFail: "⚠ 読み込み失敗", pageNumPh: "ページ",
     verTitle: "Ctrl+F5 で強制リロードすると v1.3.4 と表示されます", favDefaultName: "デフォルト", videoWord: "動画",
-    delBtn: "削除", delConfirm: "この画像をゴミ箱へ移動しますか？", delDone: "ゴミ箱へ移動しました", delFail: "削除に失敗しました",
+    delBtn: "削除", delConfirm: "この画像をゴミ箱へ移動しますか？", delDone: "ゴミ箱へ移動しました", delFail: "削除に失敗しました", trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
     title: "Gallery4ComfyUI", subComfy: "ComfyUI Images", subWebui: "WebUI Images", subFav: "Favorites",
@@ -1120,7 +1125,7 @@ const I18N = {
     advFoldTitle: "Collapse / expand left panel", clickCopy: "Click to copy", removeTitle: "Remove",
     alreadyAdded: "★ Added", loadFail: "⚠ Failed to load", pageNumPh: "Page",
     verTitle: "Hard-refresh (Ctrl+F5) to see v1.3.4", favDefaultName: "Favorites", videoWord: "Video",
-    delBtn: "Delete", delConfirm: "Move this image to the trash?", delDone: "Moved to trash", delFail: "Delete failed",
+    delBtn: "Delete", delConfirm: "Move this image to the trash?", delDone: "Moved to trash", delFail: "Delete failed", trashLabel: "Trash", trashEmpty: "Empty trash", trashConfirm: "Permanently delete everything in the trash? This cannot be undone.", trashDone: "Trash emptied",
   }
 };
 let LANG = localStorage.getItem("gallery4comfyui-lang") || "ja";
@@ -2649,7 +2654,18 @@ async function checkSettings(){
   const selScan = $("setupScan"); if(selScan){ selScan.value = s.scan_mode || "incremental"; }
   boot();
 }
-$("btnSetup").onclick = ()=>$("setup").classList.add("show");
+$("btnSetup").onclick = ()=>{ $("setup").classList.add("show"); refreshTrashInfo(); };
+async function refreshTrashInfo(){
+  try{
+    const r = await api("/api/trash");
+    if(r && r.ok) $("trashInfo").textContent = r.count + " 件 · " + (r.bytes / 1048576).toFixed(1) + " MB";
+  }catch(e){}
+}
+$("btnTrashEmpty").onclick = async ()=>{
+  if(!confirm(t("trashConfirm"))) return;
+  const r = await api("/api/trash/empty", {method:"POST"});
+  if(r && r.ok){ showToast("🗑 " + t("trashDone")); refreshTrashInfo(); }
+};
 $("btnSetupSkip").onclick = ()=>{ $("setup").classList.remove("show"); if(!BOOTED) boot(); };
 $("btnSetupSave").onclick = async ()=>{
   const r = await api("/api/settings", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({artist_format: $("setupAf").value, scan_mode: $("setupScan").value})});

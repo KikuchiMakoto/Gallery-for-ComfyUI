@@ -409,6 +409,16 @@ async def api_delete(request):
     return _json(r, 200 if r.get("ok") else 404)
 
 
+@PromptServer.instance.routes.get(P + "/api/trash")
+async def api_trash_info(request):
+    return _json(G.trash_info())
+
+
+@PromptServer.instance.routes.post(P + "/api/trash/empty")
+async def api_trash_empty(request):
+    return _json(G.empty_trash())
+
+
 @PromptServer.instance.routes.get(P + "/api/image")
 async def api_image(request):
     source = request.query.get("source", "comfyui")
