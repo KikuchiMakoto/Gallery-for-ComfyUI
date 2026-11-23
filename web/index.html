@@ -186,6 +186,9 @@
   .modal .imgside .imgbar .ib-count{color:rgba(255,255,255,.6); white-space:nowrap}
   .modal .imgside .imgbar .ib-fs{background:rgba(255,255,255,.14); border:none; color:#fff; border-radius:6px; width:28px; height:28px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:.15s; line-height:1}
   .modal .imgside .imgbar .ib-fs:hover{background:var(--accent)}
+  .modal .imgside .imgbar .ib-del{display:none; background:#c62828; border:none; color:#fff; border-radius:6px; height:28px; padding:0 10px; cursor:pointer; font-size:12.5px; align-items:center; line-height:1; opacity:.92}
+  .modal.fs .imgside .imgbar .ib-del{display:inline-flex}
+  .modal .imgside .imgbar .ib-del:hover{background:#e53935}
   /* 全屏观看模式：隐藏信息区，纯图 */
   .modal.fs .box{max-width:none; width:100vw; height:100vh; grid-template-columns:1fr; border-radius:0; border:none}
   .modal.fs .info{display:none}
@@ -895,6 +898,7 @@
         <span class="ib-name" id="mimgName"></span>
         <span class="ib-count" id="mimgCount"></span>
         <button class="ib-fs" id="mFs" data-i18n-title="titleFs" title="全画面表示 / Fullscreen">⛶</button>
+        <button class="ib-del" id="mFsDel">🗑</button>
       </div>
     </div>
     <div class="info">
@@ -2483,6 +2487,7 @@ function openLightbox(idx){
   }
   $("mfile").textContent = it.file;
   $("mDel").textContent = "🗑 " + t("delBtn");
+  $("mFsDel").textContent = "🗑 " + t("delBtn"); $("mFsDel").title = t("delBtn");
   $("mimgName").textContent = it.file.split("/").pop();
   LB_CUR_FILE = it.file || "";
   // 计数改成全局序号，才看得出「一直翻」翻到哪儿了
@@ -2553,6 +2558,7 @@ $("mFs").onclick = e=>{
     el.requestFullscreen().catch(()=>{});
   }
 };
+$("mFsDel").onclick = e=>{ e.stopPropagation(); lbDelete(); };
 document.addEventListener("fullscreenchange", ()=>{
   if(!document.fullscreenElement) $("modal").classList.remove("fs");
 });
@@ -2613,7 +2619,7 @@ async function lbDelete(){
     // 收藏页的本地全量列表也要同步删（loader 是从它切片的）
     const fi = LB_FAV_ALL.findIndex(x=>x && x.file === file && (x.source || "comfyui") === src);
     if(fi >= 0) LB_FAV_ALL.splice(fi, 1);
-    if(LB_TOTAL <= 0){ lbClose(); return; }
+    if(LB_TOTAL <= 0){ if(document.fullscreenElement) document.exitFullscreen(); lbClose(); return; }
     await lbShow(Math.min(g, LB_TOTAL - 1));
     // 底层网格从服务端重拉当前页，总数 / 分页以服务端为准
     if(LB_CTX.grid === "grid") load(false);
@@ -2627,7 +2633,7 @@ async function lbDelete(){
       $("count").textContent = (t("countTotal") ? t("countTotal") + " " : "") + TOTAL + (t("countOf") ? " " + t("countOf") : "");
       renderPager();
     }
-    if(!LB_ITEMS.length){ lbClose(); return; }
+    if(!LB_ITEMS.length){ if(document.fullscreenElement) document.exitFullscreen(); lbClose(); return; }
     LB_GIDX = Math.min(LB_IDX, LB_ITEMS.length - 1);
     LB_IDX = LB_GIDX;
     openLightbox(LB_IDX);
