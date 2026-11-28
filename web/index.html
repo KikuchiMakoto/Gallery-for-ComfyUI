@@ -6353,7 +6353,7 @@ function setLiveNewBadge(n){
 
 function handleLiveEvent(msg){
   if(!msg || typeof msg !== "object") return;
-  if(typeof msg.event_seq === "number" && msg.event_seq > LIVE_SEQ) LIVE_SEQ = msg.event_seq;
+  if(typeof msg.event_seq === "number" && (msg.type === "hello" || msg.event_seq > LIVE_SEQ)) LIVE_SEQ = msg.event_seq;
   if(msg.rating_counts) updateRatingCounts(msg.rating_counts);
 
   if(msg.type === "new_images" && Array.isArray(msg.items) && msg.items.length){
@@ -6414,6 +6414,7 @@ async function startLongPoll(){
   while(LIVE_POLL_ACTIVE && LIVE_MODE === "poll"){
     try{
       const r = await api(`/api/events?since=${LIVE_SEQ}&timeout=20`);
+      if(r && typeof r.seq === "number" && r.seq < LIVE_SEQ) LIVE_SEQ = 0;
       if(r && typeof r.seq === "number" && r.seq > LIVE_SEQ) LIVE_SEQ = r.seq;
       if(r && r.counts) updateRatingCounts(r.counts);
       if(r && Array.isArray(r.events)) r.events.forEach(handleLiveEvent);
