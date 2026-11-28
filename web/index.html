@@ -747,6 +747,10 @@
   .modal .pbadge .pl{font-size:10.5px; color:var(--dim); margin-bottom:2px}
   .modal .pbadge .pv{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .modal .sec-title{font-size:11.5px; color:var(--dim); letter-spacing:.5px; margin-top:2px}
+  .pos-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .pos-copy-btn{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; padding:0; border:none; border-radius:6px; background:transparent; color:var(--dim); cursor:pointer; flex:none}
+  .pos-copy-btn:hover{color:inherit; background:rgba(127,127,127,.16)}
+  .pos-copy-btn:active{transform:scale(.92)}
   .modal .pos, .modal .neg{font-size:13px; line-height:1.65; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:10px 12px; min-height:54px; max-height:170px; overflow-y:auto; white-space:pre-wrap; word-break:break-word}
   .modal .pos:empty::after{content:"(no prompt)"; color:var(--dim)}
   .modal .neg:empty::after{content:"(none)"; color:var(--dim)}
@@ -1657,7 +1661,10 @@
       <div class="param-grid" id="mparams"></div>
       <div class="sec-title" id="mLoraSec" data-i18n="modalLoras" hidden>LoRA モデル</div>
       <div class="lb-loras" id="mLoras" hidden></div>
-      <div class="sec-title" data-i18n="modalPrompt">ポジティブプロンプト</div>
+      <div class="pos-head">
+        <div class="sec-title" data-i18n="modalPrompt">ポジティブプロンプト</div>
+        <button id="mPosCopy" class="pos-copy-btn" type="button" title="Copy to clipboard" aria-label="Copy positive prompt"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+      </div>
       <div class="pos" id="mpos"></div>
       <div class="sec-title" data-i18n="modalNeg">ネガティブプロンプト</div>
       <div class="neg" id="mneg"></div>
@@ -4271,6 +4278,7 @@ function lbOpenOriginal(){
   const it = LB_ITEMS[LB_IDX]; if(it) window.open(imgUrl(lbSrcOf(it), it.file), "_blank");
 }
 if($("mCopy")) $("mCopy").onclick = ()=>lbCopyPrompt();
+if($("mPosCopy")) $("mPosCopy").onclick = ()=>lbCopyPrompt();
 if($("mDown")) $("mDown").onclick = ()=>lbDownloadCurrent();
 if($("mOpen")) $("mOpen").onclick = ()=>lbOpenOriginal();
 if($("ytCopy")) $("ytCopy").onclick = e=>{ e.stopPropagation(); setYtRateMenuOpen(false); lbCopyPrompt(); };
