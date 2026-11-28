@@ -1238,6 +1238,89 @@ def build_prompt(recipe, positive=None, negative=None, seed=None, steps=None, wi
 
 
 # ---------------------------------------------------------------------------
+# Tag templates (named tag lists, userdata/tag_templates.json)
+# ---------------------------------------------------------------------------
+TAG_TEMPLATES_FILE = os.path.join(USERDATA, "tag_templates.json")
+_tag_templates_cache = None
+_tag_templates_lock = threading.RLock()
+
+
+def load_tag_templates():
+    global _tag_templates_cache
+    with _tag_templates_lock:
+        if _tag_templates_cache is None:
+            try:
+                with open(TAG_TEMPLATES_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _tag_templates_cache = [it for it in raw if isinstance(it, dict)] if isinstance(raw, list) else []
+            except Exception:
+                _tag_templates_cache = []
+        return [dict(it) for it in _tag_templates_cache]
+
+
+def _save_tag_templates_unlocked(lst):
+    os.makedirs(USERDATA, exist_ok=True)
+    tmp = TAG_TEMPLATES_FILE + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(lst, f, ensure_ascii=False, indent=1)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, TAG_TEMPLATES_FILE)
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        raise
+
+
+def tag_template_list():
+    items = load_tag_templates()
+    items.sort(key=lambda it: (it.get("created_at") or 0))
+    return {"templates": items}
+
+
+def tag_template_save(entry):
+    global _tag_templates_cache
+    name = (entry.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "名前を入力してください"}
+    tags = entry.get("tags") or ""
+    if isinstance(tags, list):
+        tags = ", ".join(str(x).strip() for x in tags if str(x).strip())
+    now = int(time.time())
+    with _tag_templates_lock:
+        lst = load_tag_templates()
+        tid = entry.get("id")
+        rec = None
+        for it in lst:
+            if tid and it.get("id") == tid:
+                rec = it
+                break
+        if rec is None:
+            rec = {"id": "t%d" % int(time.time() * 1000), "created_at": now}
+            lst.append(rec)
+        rec.update({"name": name, "tags": tags, "updated_at": now})
+        _save_tag_templates_unlocked(lst)
+        _tag_templates_cache = [dict(it) for it in lst]
+    return {"ok": True, "template": dict(rec)}
+
+
+def tag_template_delete(tid):
+    global _tag_templates_cache
+    with _tag_templates_lock:
+        lst = load_tag_templates()
+        new = [it for it in lst if it.get("id") != tid]
+        if len(new) == len(lst):
+            return {"ok": False, "error": "not found"}
+        _save_tag_templates_unlocked(new)
+        _tag_templates_cache = [dict(it) for it in new]
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
 # リアルタイム WebSocket 通知 & 出力ディレクトリ監視
 # ---------------------------------------------------------------------------
 _ws_clients = {}  # cid -> (loop, asyncio.Queue)

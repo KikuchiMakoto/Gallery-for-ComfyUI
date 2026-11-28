@@ -1362,6 +1362,10 @@
         <div class="gen-row-end"><button class="iconbtn" id="genPosCopy" type="button" data-i18n="genCopy">コピー</button></div>
         <span class="gen-lbl" data-i18n="genFavArtists">お気に入り作家</span>
         <div id="genFavArtists" class="gen-fav-row"><span class="gen-fav-empty" data-i18n="genFavEmpty">（作家一覧で★を付けるとここに出ます）</span></div>
+        <span class="gen-lbl" data-i18n="genTplTitle">タグテンプレート</span>
+        <div id="genTplRow" class="gen-fav-row"><span class="gen-fav-empty" data-i18n="genTplEmpty">（未登録）</span></div>
+        <div class="gen-row-end"><button class="iconbtn" id="genTplAdd" type="button" data-i18n="genTplAdd">現在のPositiveをテンプレート登録</button></div>
+        <div id="genTplList"></div>
         <label class="gen-lbl" data-i18n="genNegative">Negative</label>
         <textarea id="genNeg" class="gen-text" rows="3"></textarea>
         <input id="genTags" class="gen-input" data-i18n-ph="genTagsPh" placeholder="タグ（カンマ区切り）">
@@ -1782,7 +1786,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", genProgRunning: "生成中…", genProgDone: "完了", genProgError: "エラー", genFavArtists: "お気に入り作家", genFavEmpty: "（作家一覧で★を付けるとここに出ます）", genFavDup: "既に入っています", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", genProgRunning: "生成中…", genProgDone: "完了", genProgError: "エラー", genFavArtists: "お気に入り作家", genFavEmpty: "（作家一覧で★を付けるとここに出ます）", genFavDup: "既に入っています", genTplTitle: "タグテンプレート", genTplEmpty: "（未登録）", genTplAdd: "現在のPositiveをテンプレート登録", genTplAllDup: "全部すでにあります", genTplInserted: "{n}件挿入しました", genTplNeedTags: "Positiveが空です", genTplNamePrompt: "テンプレート名", genTplDeleteConfirm: "このテンプレートを削除しますか？", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1893,7 +1897,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", genProgRunning: "Generating...", genProgDone: "Done", genProgError: "Error", genFavArtists: "Favorite artists", genFavEmpty: "(Star artists in the Artists tab to see them here)", genFavDup: "Already in the prompt", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", genProgRunning: "Generating...", genProgDone: "Done", genProgError: "Error", genFavArtists: "Favorite artists", genFavEmpty: "(Star artists in the Artists tab to see them here)", genFavDup: "Already in the prompt", genTplTitle: "Tag templates", genTplEmpty: "(None yet)", genTplAdd: "Register current Positive as template", genTplAllDup: "All tags already present", genTplInserted: "Inserted {n} tag(s)", genTplNeedTags: "Positive is empty", genTplNamePrompt: "Template name", genTplDeleteConfirm: "Delete this template?", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2250,6 +2254,7 @@ function genOnShow(){
   genRecipesLoad();
   genWsConnect();
   genFavLoad();
+  genTplLoad();
   if(!GEN_Q_TIMER){
     GEN_Q_TIMER = setInterval(()=>{ if(CUR_VIEW === "gen" && !document.hidden) genQueueRefresh(); }, 4000);
   }
@@ -2335,6 +2340,82 @@ async function genQueueShuffleUndo(){
   }catch(e){ console.warn("queue shuffle undo failed", e); }
   genQueueRefresh();
 }
+
+// ---------- Generate: tag templates ----------
+let GEN_TPLS = [];
+let GEN_TPL_MODE = "cursor";
+async function genTplLoad(){
+  try{
+    const r = await api("/api/tag-templates");
+    GEN_TPLS = (r && r.templates) || [];
+    genTplRender();
+  }catch(e){ console.warn("tpl load failed", e); }
+}
+function genTplRender(){
+  const row = $("genTplRow");
+  const list = $("genTplList");
+  if(row){
+    if(!GEN_TPLS.length){
+      row.innerHTML = '<span class="gen-fav-empty">' + esc(t("genTplEmpty")) + '</span>';
+    }else{
+      row.innerHTML = GEN_TPLS.map(x=>'<button class="gfav-chip" data-tpl="' + x.id + '" type="button">' + esc(x.name) + '</button>').join("");
+      row.querySelectorAll(".gfav-chip").forEach(b=>{ b.onclick = ()=>genTplInsert(b.dataset.tpl); });
+    }
+  }
+  if(list){
+    list.innerHTML = GEN_TPLS.map(x=>'<div class="glib-row"><div class="glib-main"><div class="glib-name">' + esc(x.name) + '</div><div class="glib-pos">' + esc(String(x.tags || "").slice(0, 90)) + '</div></div><button class="iconbtn glib-del" data-tpl="' + x.id + '" type="button">✕</button></div>').join("");
+    list.querySelectorAll(".glib-del").forEach(b=>{ b.onclick = ()=>genTplDelete(b.dataset.tpl); });
+  }
+}
+function genNormTag(tg){
+  return String(tg || "").trim().toLowerCase().replace(/^\(+/, "").replace(/\)+$/, "").split(":")[0].trim();
+}
+function genInsertInto(ta, text){
+  const cur = ta.value;
+  let start, end;
+  if(GEN_TPL_MODE === "end"){ start = end = cur.length; }
+  else{ start = ta.selectionStart != null ? ta.selectionStart : cur.length; end = ta.selectionEnd != null ? ta.selectionEnd : cur.length; }
+  const before = cur.slice(0, start);
+  const after = cur.slice(end);
+  let ins = text;
+  if(before && !/[\s,]$/.test(before)) ins = ", " + ins;
+  if(after && !/^[\s,]/.test(after)) ins = ins + ", ";
+  ta.value = before + ins + after;
+  const pos = (before + ins).length;
+  ta.focus();
+  try{ ta.setSelectionRange(pos, pos); }catch(e){}
+}
+function genTplInsert(id){
+  const tpl = GEN_TPLS.find(x=>x.id === id);
+  const ta = $("genPos");
+  if(!tpl || !ta) return;
+  const existing = new Set(ta.value.split(",").map(genNormTag).filter(Boolean));
+  const tags = String(tpl.tags || "").split(",").map(x=>x.trim()).filter(Boolean);
+  const fresh = tags.filter(tg=>{ const n = genNormTag(tg); return n && !existing.has(n); });
+  if(!fresh.length){ showToast(t("genTplAllDup")); return; }
+  genInsertInto(ta, fresh.join(", "));
+  showToast(t("genTplInserted").replace("{n}", String(fresh.length)));
+}
+async function genTplAdd(){
+  const ta = $("genPos");
+  const tags = ta ? ta.value.trim() : "";
+  if(!tags){ alert(t("genTplNeedTags")); return; }
+  const name = window.prompt(t("genTplNamePrompt"), "");
+  if(!name) return;
+  try{
+    const r = await api("/api/tag-templates/save", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: name.trim(), tags})});
+    if(r && r.ok) genTplLoad();
+    else if(r && r.error) alert(r.error);
+  }catch(e){ console.warn("tpl save failed", e); }
+}
+async function genTplDelete(id){
+  if(!confirm(t("genTplDeleteConfirm"))) return;
+  try{
+    await api("/api/tag-templates/delete", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id})});
+  }catch(e){ console.warn("tpl delete failed", e); }
+  genTplLoad();
+}
+if($("genTplAdd")) $("genTplAdd").onclick = ()=>genTplAdd();
 
 // ---------- Generate: favorite artists (E1) ----------
 let GEN_FAV_ARTISTS = [];

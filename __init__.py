@@ -390,6 +390,38 @@ async def _submit_prompt(graph, front=False):
     return {"ok": True, "prompt_id": prompt_id, "number": number}
 
 
+@PromptServer.instance.routes.get(P + "/api/tag-templates")
+async def api_tag_templates(request):
+    try:
+        return _json(G.tag_template_list())
+    except Exception as e:
+        return _json({"templates": [], "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/tag-templates/save")
+async def api_tag_templates_save(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    try:
+        return _json(G.tag_template_save(data or {}))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/tag-templates/delete")
+async def api_tag_templates_delete(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    try:
+        return _json(G.tag_template_delete((data or {}).get("id", "")))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
 @PromptServer.instance.routes.get(P + "/api/recipes")
 async def api_recipes(request):
     try:
