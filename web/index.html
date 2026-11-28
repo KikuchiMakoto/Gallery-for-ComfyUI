@@ -2041,6 +2041,7 @@ let CUR_ITEMS = [], CUR_IDX = -1, DEFAULT_FAVS = new Set();
 let LB_ITEMS = [], LB_IDX = -1, LB_SRC = "comfyui";
 // 跨页续翻：全局序号 + 分页窗口 + 当前网格上下文（详见 lbShow / lbEnsureWindow）
 let LB_CTX = null, LB_CACHE = new Map(), LB_WIN_START = 0, LB_GIDX = 0;
+let LB_FROM_SWIPE = false;
 let LB_TOTAL = 0, LB_PSIZE = 60, LB_LOADER = null, LB_CUR_FILE = "";
 let LB_RANDOM_MODE = false, LB_RAND_QUEUE = [], LB_RAND_NEXT = null, LB_RAND_PREV = null, LB_RAND_FETCHING = null, LB_RAND_BUSY = false;
 let GAL_QUERY_VER = 0;
@@ -2617,7 +2618,7 @@ function mkItem(it, src, items, ctx){
       if(ctx.seedCache) ctx.seedCache();
       lbShow((ctx.page() - 1) * (ctx.psize || 60) + idx, { expectItem: it });
     } else {
-      LB_CTX = null; LB_ITEMS = list; LB_TOTAL = list.length; LB_WIN_START = 0;
+      LB_CTX = null; LB_FROM_SWIPE = false; LB_ITEMS = list; LB_TOTAL = list.length; LB_WIN_START = 0;
       LB_GIDX = idx; LB_IDX = idx; LB_SRC = src;
       openLightbox(idx);
     }
@@ -3438,7 +3439,7 @@ function lbUseCtx(ctx){
   if(!ctx) return;
   LB_RANDOM_MODE = false;
   const changed = !LB_CTX || LB_CTX.key !== ctx.key;
-  LB_CTX = ctx;
+  LB_CTX = ctx; LB_FROM_SWIPE = false;
   LB_PSIZE = ctx.psize || 60;
   LB_TOTAL = ctx.total || 0;
   LB_LOADER = ctx.loader || null;
@@ -3576,6 +3577,7 @@ async function lbRandEnsureSides(curFile){
 async function openGalleryRandomLightbox(it){
   LB_RANDOM_MODE = true;
   LB_CTX = null;
+  LB_FROM_SWIPE = false;
   LB_ITEMS = [it];
   LB_TOTAL = 1;
   LB_WIN_START = 0;
@@ -3650,6 +3652,7 @@ async function lbClose(){
   window._lbJustClosedAt = Date.now();
   const wasRand = LB_RANDOM_MODE;
   LB_RANDOM_MODE = false;
+  LB_FROM_SWIPE = false;
   pauseVideos();
   setYtRateMenuOpen(false);
   setLbInfoOpen(false);
@@ -3744,6 +3747,10 @@ async function artOpenLightbox(a, startFile){
     });
     lbShow(idx);
   }catch(e){ showToast("✖ " + (e.message || e)); }
+}
+function dismissLbInfo(){
+  if(LB_FROM_SWIPE){ lbClose(); return; }
+  setLbInfoOpen(false);
 }
 function setLbInfoOpen(open){
   const m = $("modal"), sh = $("mInfoSheet");
@@ -4033,8 +4040,8 @@ function openLightbox(idx, opts){
 $("close").onclick = ()=>lbClose();
 if($("ytRateBtn")) $("ytRateBtn").onclick = e=>{ e.stopPropagation(); setYtRateMenuOpen(!$("ytRateWrap").classList.contains("open")); };
 if($("ytInfoBtn")) $("ytInfoBtn").onclick = e=>{ e.stopPropagation(); setYtRateMenuOpen(false); setLbInfoOpen(!$("modal").classList.contains("info-open")); };
-if($("mInfoClose")) $("mInfoClose").onclick = e=>{ e.stopPropagation(); setLbInfoOpen(false); };
-if($("mSheetBackdrop")) $("mSheetBackdrop").onclick = e=>{ e.stopPropagation(); setLbInfoOpen(false); };
+if($("mInfoClose")) $("mInfoClose").onclick = e=>{ e.stopPropagation(); dismissLbInfo(); };
+if($("mSheetBackdrop")) $("mSheetBackdrop").onclick = e=>{ e.stopPropagation(); dismissLbInfo(); };
 $("modal").onclick = e=>{
   if($("ytRateWrap") && !$("ytRateWrap").contains(e.target)) setYtRateMenuOpen(false);
   if(e.target === $("modal")) lbClose();
@@ -4136,7 +4143,7 @@ if($("mImgSide")){
       }
       const infoOpen = $("modal").classList.contains("info-open");
       if(infoOpen){
-        if(dy > 60 || (Math.abs(dx) < 8 && Math.abs(dy) < 8)) setLbInfoOpen(false);
+        if(dy > 60 || (Math.abs(dx) < 8 && Math.abs(dy) < 8)) dismissLbInfo();
         return;
       }
       if(dy < -45 && Math.abs(dy) > Math.abs(dx) * 0.9){
@@ -4196,7 +4203,7 @@ if($("mImgSide")){
       if(!dragging) return;
       dragging = false;
       sheet.classList.remove("dragging");
-      if(dy > 64) setLbInfoOpen(false);
+      if(dy > 64) dismissLbInfo();
       else sheet.style.transform = "";
     };
     sheet.addEventListener("touchend", endSheet, {passive:true});
@@ -4221,7 +4228,7 @@ if($("mImgSide")){
         pActive = false;
         if(pId !== null){ try{ handle.releasePointerCapture(pId); }catch(err){} pId = null; }
         sheet.classList.remove("dragging");
-        if(pDy > 60) setLbInfoOpen(false);
+        if(pDy > 60) dismissLbInfo();
         else sheet.style.transform = "";
       };
       handle.addEventListener("pointerup", endHandle);
@@ -4233,7 +4240,7 @@ document.addEventListener("keydown", e=>{
   if(!$("modal").classList.contains("show")) return;
   if(e.key === "Escape"){
     if($("ytRateWrap") && $("ytRateWrap").classList.contains("open")) setYtRateMenuOpen(false);
-    else if($("modal").classList.contains("info-open")) setLbInfoOpen(false);
+    else if($("modal").classList.contains("info-open")) dismissLbInfo();
     else lbClose();
   }
   if(e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp"){ e.preventDefault(); lbStep(-1); }
@@ -6050,6 +6057,7 @@ function swOpenDetail(withInfo){
   if(!cur) return;
   LB_RANDOM_MODE = false;
   LB_CTX = null;
+  LB_FROM_SWIPE = true;
   LB_ITEMS = SW.items;
   LB_TOTAL = SW.items.length;
   LB_WIN_START = 0;
