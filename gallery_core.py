@@ -1025,6 +1025,113 @@ def rating_counts(source="comfyui", entries=None):
 
 
 # ---------------------------------------------------------------------------
+# Prompt Library (Positive + Negative pairs, userdata/prompts.json)
+# ---------------------------------------------------------------------------
+PROMPTS_FILE = os.path.join(USERDATA, "prompts.json")
+_prompts_cache = None
+_prompts_lock = threading.RLock()
+
+
+def load_prompts():
+    global _prompts_cache
+    with _prompts_lock:
+        if _prompts_cache is None:
+            try:
+                with open(PROMPTS_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _prompts_cache = [it for it in raw if isinstance(it, dict)] if isinstance(raw, list) else []
+            except Exception:
+                _prompts_cache = []
+        return [dict(it) for it in _prompts_cache]
+
+
+def _save_prompts_unlocked(lst):
+    os.makedirs(USERDATA, exist_ok=True)
+    tmp = PROMPTS_FILE + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(lst, f, ensure_ascii=False, indent=1)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, PROMPTS_FILE)
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        raise
+
+
+def prompt_list():
+    items = load_prompts()
+    items.sort(key=lambda it: (not it.get("favorite"), -(it.get("use_count") or 0), -(it.get("updated_at") or 0)))
+    return {"prompts": items}
+
+
+def prompt_save(entry):
+    global _prompts_cache
+    name = (entry.get("name") or "").strip()
+    if not name:
+        return {"ok": False, "error": "名前を入力してください"}
+    tags = entry.get("tags") or []
+    if isinstance(tags, str):
+        tags = [x.strip() for x in tags.split(",") if x.strip()]
+    else:
+        tags = [str(x).strip() for x in tags if str(x).strip()]
+    now = int(time.time())
+    with _prompts_lock:
+        lst = load_prompts()
+        pid = entry.get("id")
+        rec = None
+        for it in lst:
+            if pid and it.get("id") == pid:
+                rec = it
+                break
+        if rec is None:
+            rec = {"id": "p%d" % int(time.time() * 1000), "created_at": now, "use_count": 0}
+            lst.append(rec)
+        rec.update({"name": name,
+                    "positive": entry.get("positive") or "",
+                    "negative": entry.get("negative") or "",
+                    "tags": tags,
+                    "favorite": bool(entry.get("favorite")),
+                    "updated_at": now})
+        _save_prompts_unlocked(lst)
+        _prompts_cache = [dict(it) for it in lst]
+    return {"ok": True, "prompt": dict(rec)}
+
+
+def prompt_delete(pid):
+    global _prompts_cache
+    with _prompts_lock:
+        lst = load_prompts()
+        new = [it for it in lst if it.get("id") != pid]
+        if len(new) == len(lst):
+            return {"ok": False, "error": "not found"}
+        _save_prompts_unlocked(new)
+        _prompts_cache = [dict(it) for it in new]
+    return {"ok": True}
+
+
+def prompt_use(pid):
+    global _prompts_cache
+    with _prompts_lock:
+        lst = load_prompts()
+        hit = None
+        for it in lst:
+            if it.get("id") == pid:
+                it["use_count"] = (it.get("use_count") or 0) + 1
+                hit = it
+                break
+        if hit is None:
+            return {"ok": False, "error": "not found"}
+        _save_prompts_unlocked(lst)
+        _prompts_cache = [dict(it) for it in lst]
+    return {"ok": True, "use_count": hit["use_count"]}
+
+
+# ---------------------------------------------------------------------------
 # リアルタイム WebSocket 通知 & 出力ディレクトリ監視
 # ---------------------------------------------------------------------------
 _ws_clients = {}  # cid -> (loop, asyncio.Queue)

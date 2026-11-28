@@ -373,6 +373,50 @@ async def api_queue_shuffle_undo(request):
     PromptServer.instance.queue_updated()
     return _json({"ok": True, "restored": restored})
 
+@PromptServer.instance.routes.get(P + "/api/prompts")
+async def api_prompts(request):
+    try:
+        return _json(G.prompt_list())
+    except Exception as e:
+        return _json({"prompts": [], "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/prompts/save")
+async def api_prompts_save(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    try:
+        return _json(G.prompt_save(data or {}))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/prompts/delete")
+async def api_prompts_delete(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    try:
+        return _json(G.prompt_delete((data or {}).get("id", "")))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/prompts/use")
+async def api_prompts_use(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    try:
+        return _json(G.prompt_use((data or {}).get("id", "")))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
 
 
 @PromptServer.instance.routes.get(P + "/api/scan")
