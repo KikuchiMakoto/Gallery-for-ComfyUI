@@ -117,6 +117,10 @@
   .live-pill.poll .live-dot{background: var(--dim); opacity: .75}
   .live-pill.err .live-dot{background: var(--dim); opacity: .25}
   .live-new{background: var(--card); border: 1px solid var(--line); color: var(--txt); border-radius: 999px; padding: 1px 7px; font-size: 10.5px; font-weight: 700}
+  .live-pill #liveTxt{display:none}
+  @keyframes cfblink{0%,100%{opacity:.85}50%{opacity:.2}}
+  .live-pill.ws .live-dot{animation: cfblink 1.6s ease-in-out infinite}
+  .gen-wrap{max-width:860px; margin:0 auto; padding:14px 12px 48px}
 
   .tb-util{margin-left: auto; display: flex; align-items: center; gap: 6px}
   .iconbtn{
@@ -1064,10 +1068,11 @@
     <button class="live-pill" id="liveStatus" type="button" title="リアルタイム同期（クリックで新着チェック / 表示）">
       <span class="live-dot"></span>
       <span id="liveTxt">CONNECT</span>
-      <span class="live-new" id="liveNew" hidden>+0</span>
+      <span class="live-new" id="liveNew" hidden>0</span>
     </button>
     <div class="tb-util">
-      <button class="iconbtn mode-toggle" id="btnModeToggle" type="button" title="スワイプ / ギャラリー切替">ギャラリー</button>
+      <button class="iconbtn mode-toggle" id="btnMode1" type="button">GView</button>
+      <button class="iconbtn mode-toggle" id="btnMode2" type="button">Generate</button>
       <button class="iconbtn" id="btnSetup" data-i18n-title="titleSetup" title="設定" aria-label="Settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
   </div>
@@ -1297,6 +1302,11 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 生成ビュー -->
+  <div id="genView" hidden>
+    <div class="gen-wrap" id="genWrap"></div>
   </div>
 
   <!-- 画师 / 画师库 共享区域（含共享右侧画师串栏） -->
@@ -1677,7 +1687,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1788,7 +1798,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2110,12 +2120,30 @@ if(window.visualViewport){
 // ---------- Tab & ビュー切替 ----------
 var _sideCurTop = null;
 var _sideRaf = null;
+const MODE_ORDER = ["swipe", "gview", "gen"];
+const MODE_LABEL = {swipe: "SWipe", gview: "GView", gen: "Generate"};
+function curMode(){
+  return CUR_VIEW === "swipe" ? "swipe" : (CUR_VIEW === "gen" ? "gen" : "gview");
+}
 function updateModeToggleBtn(){
-  const b = $("btnModeToggle");
-  if(!b) return;
-  const inSwipe = CUR_VIEW === "swipe";
-  b.textContent = inSwipe ? t("modeToGal") : t("modeToSwipe");
-  b.title = inSwipe ? t("modeToGalTitle") : t("modeToSwipeTitle");
+  const others = MODE_ORDER.filter(m=>m !== curMode());
+  [["btnMode1", others[0]], ["btnMode2", others[1]]].forEach(([id, m])=>{
+    const b = $(id);
+    if(!b) return;
+    b.dataset.mode = m;
+    b.textContent = MODE_LABEL[m];
+    b.title = MODE_LABEL[m];
+  });
+}
+function setMode(m){
+  if(m === "swipe"){ activateTab("swipe"); return; }
+  if(m === "gview"){ activateTab("comfyui"); return; }
+  if(m === "gen"){
+    document.querySelectorAll(".srctab, .bn-btn").forEach(x=>x.classList.remove("on"));
+    showView("gen");
+    $("srcLabel").textContent = t("subGen");
+    if(typeof genOnShow === "function") genOnShow();
+  }
 }
 function setGalDrawerOpen(open){
   const dr = $("galDrawer"), btn = $("btnGalMenu");
@@ -2149,6 +2177,7 @@ function showView(which){
   syncAppViewport();
   $("swipeView").hidden = which !== "swipe";
   $("mainView").hidden = which !== "main";
+  if($("genView")) $("genView").hidden = which !== "gen";
   $("favView").hidden = true;
   const galTools = $("galTools");
   if(galTools) galTools.hidden = which !== "main";
@@ -2260,9 +2289,10 @@ function activateTab(src){
 document.querySelectorAll(".srctab, .bn-btn").forEach(b=>{
   b.onclick = ()=>activateTab(b.dataset.src);
 });
-if($("btnModeToggle")){
-  $("btnModeToggle").onclick = ()=>activateTab(CUR_VIEW === "swipe" ? "comfyui" : "swipe");
-}
+["btnMode1", "btnMode2"].forEach(id=>{
+  const b = $(id);
+  if(b) b.onclick = ()=>setMode(b.dataset.mode);
+});
 if($("brandHome")) $("brandHome").onclick = ()=>activateTab("swipe");
 async function refreshSource(){ loadModels(); loadSamplers(); loadLoras(); loadStats(); load(true); }
 
@@ -6218,7 +6248,7 @@ function setLiveNewBadge(n){
   if(pill) pill.classList.toggle("has-new", LIVE_NEW_COUNT > 0);
   if(!el) return;
   el.hidden = LIVE_NEW_COUNT <= 0;
-  el.textContent = (LANG === "ja" ? "新着 +" : "New +") + LIVE_NEW_COUNT;
+  el.textContent = String(LIVE_NEW_COUNT);
 }
 
 function handleLiveEvent(msg){
