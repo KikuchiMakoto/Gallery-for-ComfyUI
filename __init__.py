@@ -5,7 +5,7 @@ Comfinder —— ComfyUI カスタムノード・高速スワイプ＆ギャラ�
 - ComfyUI キャンバスに「Comfinder」ノードを追加 → 「Comfinder を開く」ボタン → 新規タブで開く
 - スワイプ仕分け（未評価 / ★1〜3 / ゴミ箱）とギャラリー検索・閲覧を ComfyUI プロセス内で提供
 """
-import os, json, threading, zipfile, datetime, asyncio, time, tempfile, re
+import os, json, threading, zipfile, datetime, asyncio, time, tempfile, re, heapq
 
 from server import PromptServer
 from aiohttp import web
@@ -230,6 +230,94 @@ async def api_settings_save(request):
         data = {}
     r = G.save_settings(data)
     return _json(r, 200 if r.get("ok") else 400)
+
+
+# ---------------------------------------------------------------------------
+# Queue view / control (ComfyUI's own queue is the source of truth)
+# ---------------------------------------------------------------------------
+def _queue_positive_preview(prompt):
+    if not isinstance(prompt, dict):
+        return ""
+    try:
+        for node in prompt.values():
+            if not isinstance(node, dict):
+                continue
+            ct = node.get("class_type", "")
+            if ct.startswith("KSampler") or ct in ("SamplerCustom", "SamplerCustomAdvanced"):
+                ref = (node.get("inputs") or {}).get("positive")
+                if isinstance(ref, (list, tuple)) and ref:
+                    tgt = prompt.get(str(ref[0]))
+                    if tgt is None:
+                        tgt = prompt.get(ref[0])
+                    if isinstance(tgt, dict):
+                        txt = (tgt.get("inputs") or {}).get("text")
+                        if isinstance(txt, str) and txt.strip():
+                            return txt.strip()[:120]
+        texts = []
+        for node in prompt.values():
+            if isinstance(node, dict) and "CLIPTextEncode" in node.get("class_type", ""):
+                txt = (node.get("inputs") or {}).get("text")
+                if isinstance(txt, str) and txt.strip():
+                    texts.append(txt.strip())
+        if texts:
+            return max(texts, key=len)[:120]
+    except Exception:
+        pass
+    return ""
+
+
+def _queue_item_view(item):
+    extra = item[3] if len(item) > 3 and isinstance(item[3], dict) else {}
+    return {
+        "number": item[0],
+        "prompt_id": item[1],
+        "positive": _queue_positive_preview(item[2]),
+        "create_time": extra.get("create_time"),
+    }
+
+
+@PromptServer.instance.routes.get(P + "/api/queue")
+async def api_queue(request):
+    try:
+        q = PromptServer.instance.prompt_queue
+        with q.mutex:
+            pending = [_queue_item_view(it) for it in sorted(q.queue, key=lambda x: x[0])]
+            running = [_queue_item_view(it) for it in q.currently_running.values()]
+        return _json({"ok": True, "running": running, "pending": pending})
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/queue/front")
+async def api_queue_front(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    pid = (data or {}).get("prompt_id", "")
+    if not pid:
+        return _json({"ok": False, "error": "prompt_id is required"}, 400)
+    q = PromptServer.instance.prompt_queue
+    with q.mutex:
+        idx = None
+        min_num = None
+        for i, it in enumerate(q.queue):
+            if not (isinstance(it, (list, tuple)) and len(it) >= 2
+                    and isinstance(it[0], (int, float)) and isinstance(it[1], str)):
+                return _json({"ok": False, "error": "unexpected queue item shape"}, 400)
+            if min_num is None or it[0] < min_num:
+                min_num = it[0]
+            if it[1] == pid:
+                idx = i
+        if idx is None:
+            return _json({"ok": False, "error": "prompt_id not in pending queue"}, 404)
+        if q.queue[idx][0] == min_num:
+            return _json({"ok": True, "number": min_num, "note": "already at front"})
+        new_num = min_num - 1
+        q.queue[idx] = (new_num,) + tuple(q.queue[idx][1:])
+        heapq.heapify(q.queue)
+    PromptServer.instance.queue_updated()
+    return _json({"ok": True, "number": new_num})
 
 
 @PromptServer.instance.routes.get(P + "/api/scan")
