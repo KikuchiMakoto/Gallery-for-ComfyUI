@@ -149,6 +149,12 @@
   .gen-grid{display:grid; grid-template-columns:1fr 1fr; gap:0 10px}
   .gen-actions{display:flex; gap:8px; margin-top:10px}
   .iconbtn.primary{background: var(--acc); color:#fff; border-color:transparent; font-weight:700}
+  .gen-progress{padding:10px}
+  .gp-head{display:flex; align-items:center; gap:8px; font-size:12.5px; color: var(--dim)}
+  .gp-head .spacer{flex:1}
+  .gp-bar{height:8px; background: var(--line); border-radius:4px; overflow:hidden; margin-top:8px}
+  #genProgFill{height:100%; width:0%; background: var(--acc); transition: width .2s}
+  #genProgImg{display:none; width:100%; border-radius:6px; margin-top:8px}
 
   .tb-util{margin-left: auto; display: flex; align-items: center; gap: 6px}
   .iconbtn{
@@ -1335,7 +1341,11 @@
   <!-- 生成ビュー -->
   <div id="genView" hidden>
     <div class="gen-wrap" id="genWrap">
-      <div class="gen-sec" id="genProgress" hidden></div>
+      <div class="gen-sec gen-progress" id="genProgress" hidden>
+        <div class="gp-head"><span id="genProgLabel">—</span><span class="spacer"></span><span id="genProgStep"></span></div>
+        <div class="gp-bar"><div id="genProgFill"></div></div>
+        <img id="genProgImg" alt="">
+      </div>
       <div class="gen-sec">
         <div class="gen-sec-head">
           <h3 data-i18n="genPromptTitle">プロンプト</h3>
@@ -1767,7 +1777,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", genProgRunning: "生成中…", genProgDone: "完了", genProgError: "エラー", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1878,7 +1888,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", genProgRunning: "Generating...", genProgDone: "Done", genProgError: "Error", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2233,6 +2243,7 @@ function genOnShow(){
   genQueueRefresh();
   genLibLoad();
   genRecipesLoad();
+  genWsConnect();
   if(!GEN_Q_TIMER){
     GEN_Q_TIMER = setInterval(()=>{ if(CUR_VIEW === "gen" && !document.hidden) genQueueRefresh(); }, 4000);
   }
@@ -2317,6 +2328,99 @@ async function genQueueShuffleUndo(){
     await api("/api/queue/shuffle/undo", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
   }catch(e){ console.warn("queue shuffle undo failed", e); }
   genQueueRefresh();
+}
+
+// ---------- Generate: live progress via ComfyUI /ws ----------
+let GEN_WS = null;
+let GEN_WS_ID = null;
+let GEN_PROG = {active: false, value: 0, max: 0};
+let GEN_PROG_URL = null;
+function genWsConnect(){
+  if(GEN_WS && (GEN_WS.readyState === 0 || GEN_WS.readyState === 1)) return;
+  if(!GEN_WS_ID) GEN_WS_ID = "cf-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  let ws;
+  try{ ws = new WebSocket(proto + "//" + location.host + "/ws?clientId=" + encodeURIComponent(GEN_WS_ID)); }
+  catch(e){ return; }
+  GEN_WS = ws;
+  ws.binaryType = "arraybuffer";
+  ws.onmessage = (ev)=>{
+    if(typeof ev.data === "string"){
+      let m = null;
+      try{ m = JSON.parse(ev.data); }catch(e){}
+      if(m) genWsEvent(m);
+    }else{
+      genWsPreview(ev.data);
+    }
+  };
+  ws.onclose = ()=>{
+    GEN_WS = null;
+    if(CUR_VIEW === "gen") setTimeout(()=>genWsConnect(), 3000);
+  };
+  ws.onerror = ()=>{ try{ ws.close(); }catch(e){} };
+}
+function genWsShow(){
+  const box = $("genProgress");
+  if(box) box.hidden = false;
+}
+function genWsEvent(m){
+  const d = m.data || {};
+  if(m.type === "execution_start"){
+    GEN_PROG = {active: true, value: 0, max: 0};
+    genWsShow();
+    if($("genProgLabel")) $("genProgLabel").textContent = t("genProgRunning");
+    if($("genProgStep")) $("genProgStep").textContent = "";
+    const fill0 = $("genProgFill");
+    if(fill0) fill0.style.width = "0%";
+    const img = $("genProgImg");
+    if(img){ img.style.display = "none"; img.removeAttribute("src"); }
+    genProgLabelFromQueue();
+  }else if(m.type === "progress"){
+    GEN_PROG.value = d.value || 0;
+    GEN_PROG.max = d.max || 0;
+    const fill = $("genProgFill");
+    if(fill && GEN_PROG.max > 0) fill.style.width = Math.round(100 * GEN_PROG.value / GEN_PROG.max) + "%";
+    if($("genProgStep")) $("genProgStep").textContent = GEN_PROG.max ? (GEN_PROG.value + " / " + GEN_PROG.max) : "";
+    genWsShow();
+  }else if(m.type === "execution_success"){
+    GEN_PROG.active = false;
+    const fill = $("genProgFill");
+    if(fill) fill.style.width = "100%";
+    if($("genProgLabel")) $("genProgLabel").textContent = t("genProgDone");
+    if($("genProgStep")) $("genProgStep").textContent = "";
+    setTimeout(()=>{ if(!GEN_PROG.active){ const box = $("genProgress"); if(box) box.hidden = true; const img = $("genProgImg"); if(img) img.style.display = "none"; } }, 2500);
+    genQueueRefresh();
+  }else if(m.type === "execution_error" || m.type === "execution_interrupted"){
+    GEN_PROG.active = false;
+    if($("genProgLabel")) $("genProgLabel").textContent = t("genProgError");
+  }
+}
+function genWsPreview(buf){
+  try{
+    if(!buf || buf.byteLength < 8) return;
+    const view = new DataView(buf);
+    if(view.getUint32(0) !== 1) return;
+    const mime = view.getUint32(4) === 2 ? "image/png" : "image/jpeg";
+    const blob = new Blob([new Uint8Array(buf).slice(8)], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const img = $("genProgImg");
+    if(!img){ URL.revokeObjectURL(url); return; }
+    const old = GEN_PROG_URL;
+    GEN_PROG_URL = url;
+    img.src = url;
+    img.style.display = "block";
+    if(old) URL.revokeObjectURL(old);
+    genWsShow();
+  }catch(e){}
+}
+async function genProgLabelFromQueue(){
+  try{
+    const r = await api("/api/queue");
+    const run = (r && r.running && r.running[0]) || null;
+    if(run && $("genProgLabel") && GEN_PROG.active){
+      $("genProgLabel").textContent = (run.positive || t("genProgRunning")).slice(0, 80);
+    }
+  }catch(e){}
 }
 
 // ---------- Generate: recipes & submit ----------
