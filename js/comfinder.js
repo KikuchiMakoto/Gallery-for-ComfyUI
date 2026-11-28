@@ -1,9 +1,9 @@
 import { app } from "../../scripts/app.js";
 
 app.registerExtension({
-  name: "Gallery4ComfyUI.Opener",
+  name: "Comfinder.Opener",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== "Gallery4ComfyUIOpener") return;
+    if (nodeData.name !== "ComfinderOpener" && nodeData.name !== "Gallery4ComfyUIOpener") return;
 
     const onNodeCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function () {
@@ -11,7 +11,7 @@ app.registerExtension({
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = "ギャラリーを開く";
+      btn.textContent = "Comfinder を開く";
       btn.style.cssText = `
         width: 100%;
         padding: 8px 0;
@@ -33,18 +33,18 @@ app.registerExtension({
       btn.addEventListener("click", async () => {
         const w = this.widgets?.find(x => x.name === "webui_url");
         const cfg = (w?.value || "").trim();
-        const target = cfg || "/gallery4comfyui/";
+        const target = cfg || "/comfinder/";
 
         // 懒启动：先触发索引（幂等），再打开页面
-        setLabel("ギャラリーを起動中…", true);
+        setLabel("Comfinder を起動中…", true);
         try {
-          await fetch("/gallery4comfyui/api/boot", { cache: "no-store" });
+          await fetch("/comfinder/api/boot", { cache: "no-store" });
         } catch (e) { /* ComfyUI 未就绪时静默，页面打开后也会自动触发 */ }
-        setLabel("ギャラリーを開く", false);
+        setLabel("Comfinder を開く", false);
         window.open(target, "_blank");
       });
 
-      const dom = this.addDOMWidget("open_gallery_btn", "button", btn, { serialize: false });
+      const dom = this.addDOMWidget("open_comfinder_btn", "button", btn, { serialize: false });
       dom.computeSize = function () { return [this.parent?.size?.[0] || 200, 38]; };
       dom.computedHeight = 38;
       return r;
