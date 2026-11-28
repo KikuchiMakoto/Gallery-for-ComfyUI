@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Gallery4ComfyUI —— ComfyUI 自定义节点插件（发布版）
-==============================================
-- ComfyUI 画布添加「Gallery4ComfyUI」节点 → 点「打开图库」按钮 → 新窗口打开图库
-- 图库为双来源标签页：ComfyUI 图片 / SD WebUI 图片（首次运行需配置 SD WebUI 根目录）
-- 页面与 API 由插件在 ComfyUI 进程内提供（无需独立服务）
-- 支持搜索、按模型/采样器/步数/CFG/尺寸筛选、多排序、收藏、统计
-
-安装：将本目录放入 ComfyUI/custom_nodes/Gallery4ComfyUI 后重启 ComfyUI。
+Comfinder —— ComfyUI カスタムノード・高速スワイプ＆ギャラリー WebApp
+====================================================================
+- ComfyUI キャンバスに「Comfinder」ノードを追加 → 「Comfinder を開く」ボタン → 新規タブで開く
+- スワイプ仕分け（未評価 / ★1〜3 / ゴミ箱）とギャラリー検索・閲覧を ComfyUI プロセス内で提供
 """
 import os, json, threading, zipfile, datetime, asyncio, time, tempfile, re
 
@@ -19,10 +15,10 @@ from . import gallery_core as G
 WEB_DIRECTORY = "./js"
 
 # ---------------------------------------------------------------------------
-# 节点
+# ノード
 # ---------------------------------------------------------------------------
-class Gallery4ComfyUIOpener:
-    """图库打开器：前端 JS 提供「打开图库」按钮"""
+class ComfinderOpener:
+    """Comfinder オープナー：フロントエンド JS から「Comfinder を開く」ボタンを提供"""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -35,21 +31,27 @@ class Gallery4ComfyUIOpener:
     RETURN_TYPES = ()
     FUNCTION = "noop"
     OUTPUT_NODE = True
-    CATEGORY = "Gallery"
+    CATEGORY = "Comfinder"
 
     def noop(self, webui_url):
         return ()
 
 
-NODE_CLASS_MAPPINGS = {"Gallery4ComfyUIOpener": Gallery4ComfyUIOpener}
-NODE_DISPLAY_NAME_MAPPINGS = {"Gallery4ComfyUIOpener": "Gallery4ComfyUI"}
+NODE_CLASS_MAPPINGS = {
+    "ComfinderOpener": ComfinderOpener,
+    "Gallery4ComfyUIOpener": ComfinderOpener,
+}
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "ComfinderOpener": "Comfinder",
+    "Gallery4ComfyUIOpener": "Comfinder",
+}
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
 
 # ---------------------------------------------------------------------------
-# 路由
+# ルーティング
 # ---------------------------------------------------------------------------
-P = "/gallery4comfyui"
+P = "/comfinder"
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
 
 
@@ -78,6 +80,17 @@ def _safe_name(name):
     return "/".join(parts)
 
 
+@PromptServer.instance.routes.get(P)
+async def page_index_redirect(request):
+    raise web.HTTPFound(P + "/")
+
+
+@PromptServer.instance.routes.get("/gallery4comfyui")
+@PromptServer.instance.routes.get("/gallery4comfyui/")
+async def legacy_index_redirect(request):
+    raise web.HTTPFound(P + "/")
+
+
 @PromptServer.instance.routes.get(P + "/")
 async def page_index(request):
     fp = os.path.join(WEB_DIR, "index.html")
@@ -86,6 +99,71 @@ async def page_index(request):
         resp.headers["Cache-Control"] = "no-store"
         return resp
     return web.Response(status=404, text="index.html not found")
+
+
+def _pwa_file(filename, content_type=None, no_store=False, sw=False):
+    fp = os.path.join(WEB_DIR, filename)
+    if not os.path.isfile(fp):
+        return web.Response(status=404, text=filename + " not found")
+    resp = web.FileResponse(fp)
+    if content_type:
+        resp.content_type = content_type
+    if no_store:
+        resp.headers["Cache-Control"] = "no-store"
+    if sw:
+        resp.headers["Service-Worker-Allowed"] = P + "/"
+    return resp
+
+
+@PromptServer.instance.routes.get(P + "/manifest.json")
+async def pwa_manifest(request):
+    return _pwa_file("manifest.json", "application/manifest+json", no_store=True)
+
+
+@PromptServer.instance.routes.get(P + "/sw.js")
+async def pwa_sw(request):
+    return _pwa_file("sw.js", "application/javascript", no_store=True, sw=True)
+
+
+@PromptServer.instance.routes.get(P + "/icon.svg")
+async def pwa_icon_svg(request):
+    return _pwa_file("icon.svg", "image/svg+xml")
+
+
+@PromptServer.instance.routes.get(P + "/favicon.ico")
+async def pwa_favicon(request):
+    return _pwa_file("favicon.ico", "image/x-icon")
+
+
+@PromptServer.instance.routes.get(P + "/icon-32.png")
+async def pwa_icon_32(request):
+    return _pwa_file("icon-32.png", "image/png")
+
+
+@PromptServer.instance.routes.get(P + "/icon-192.png")
+async def pwa_icon_192(request):
+    return _pwa_file("icon-192.png", "image/png")
+
+
+@PromptServer.instance.routes.get(P + "/icon-512.png")
+async def pwa_icon_512(request):
+    return _pwa_file("icon-512.png", "image/png")
+
+
+@PromptServer.instance.routes.get(P + "/apple-touch-icon.png")
+async def pwa_apple_icon(request):
+    return _pwa_file("apple-touch-icon.png", "image/png")
+
+
+@PromptServer.instance.routes.get(P + "/fonts/{name}")
+async def pwa_font(request):
+    name = os.path.basename(request.match_info.get("name", ""))
+    if name not in ("Iosevka-Regular.woff2", "Iosevka-Bold.woff2"):
+        return web.Response(status=404, text="font not found")
+    fp = os.path.join(WEB_DIR, "fonts", name)
+    if not os.path.isfile(fp):
+        return web.Response(status=404, text="font not found")
+    return web.FileResponse(fp, headers={"Content-Type": "font/woff2", "Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @PromptServer.instance.routes.get(P + "/api/artist/covers")
@@ -148,6 +226,8 @@ async def api_settings_save(request):
         data = await request.json()
     except Exception:
         data = {}
+    if not isinstance(data, dict):
+        data = {}
     r = G.save_settings(data)
     return _json(r, 200 if r.get("ok") else 400)
 
@@ -197,6 +277,36 @@ async def api_gallery(request):
         artists_all=[x for x in q.get("chain_all", "").split(",") if x.strip()],
         artists_any=[x for x in q.get("chain_any", "").split(",") if x.strip()],
         artist_min=_int(q.get("artist_min")),
+        rating=q.get("rating", ""),
+    )
+    return _json(r)
+
+
+@PromptServer.instance.routes.get(P + "/api/gallery/random")
+async def api_gallery_random(request):
+    q = request.query
+    source = q.get("source", "comfyui")
+    r = G.query_random(
+        source,
+        q=q.get("q", ""),
+        model=q.get("model", ""),
+        sampler=q.get("sampler", ""),
+        lora=q.get("lora", ""),
+        steps_min=_int(q.get("steps_min")),
+        steps_max=_int(q.get("steps_max")),
+        cfg_min=_float(q.get("cfg_min")),
+        cfg_max=_float(q.get("cfg_max")),
+        min_w=_int(q.get("min_w")),
+        min_h=_int(q.get("min_h")),
+        fav_only=q.get("fav", "0") == "1",
+        tags=q.get("tags", ""),
+        artist=q.get("artist", ""),
+        artists_all=[x for x in q.get("chain_all", "").split(",") if x.strip()],
+        artists_any=[x for x in q.get("chain_any", "").split(",") if x.strip()],
+        artist_min=_int(q.get("artist_min")),
+        rating=q.get("rating", "rated"),
+        count=min(_int(q.get("count"), 20) or 20, 100),
+        exclude=_safe_name(q.get("exclude", "")),
     )
     return _json(r)
 
@@ -395,6 +505,8 @@ async def api_fav_toggle(request):
         data = await request.json()
     except Exception:
         data = {}
+    if not isinstance(data, dict):
+        data = {}
     r = G.save_fav(data.get("source", "comfyui"), _safe_name(data.get("file", "")), bool(data.get("on", True)))
     return _json(r)
 
@@ -405,8 +517,50 @@ async def api_delete(request):
         data = await request.json()
     except Exception:
         data = {}
+    if not isinstance(data, dict):
+        data = {}
     r = G.delete_image(data.get("source", "comfyui"), _safe_name(data.get("file", "")))
     return _json(r, 200 if r.get("ok") else 404)
+
+
+@PromptServer.instance.routes.post(P + "/api/restore")
+async def api_restore(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    r = G.restore_image(
+        data.get("source", "comfyui"),
+        _safe_name(data.get("file", "")),
+        trash_rel=data.get("trash_rel", ""),
+        prev_rating=data.get("prev_rating"),
+        prev_folders=data.get("prev_folders"),
+    )
+    return _json(r, 200 if r.get("ok") else 400)
+
+
+@PromptServer.instance.routes.get(P + "/api/ratings")
+async def api_ratings(request):
+    source = request.query.get("source", "comfyui")
+    return _json({"ratings": G.load_ratings(), "counts": G.rating_counts(source)})
+
+
+@PromptServer.instance.routes.post(P + "/api/rate")
+async def api_rate(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    r = G.rate_image(
+        data.get("source", "comfyui"),
+        _safe_name(data.get("file", "")),
+        data.get("rating", 0),
+    )
+    return _json(r, 200 if r.get("ok") else 400)
 
 
 @PromptServer.instance.routes.get(P + "/api/trash")
@@ -414,15 +568,108 @@ async def api_trash_info(request):
     return _json(G.trash_info())
 
 
+@PromptServer.instance.routes.post(P + "/api/trash/purge")
+async def api_trash_purge(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    items = [
+        {"source": it.get("source", "comfyui"), "file": _safe_name(it.get("file", ""))}
+        for it in (data.get("items") or []) if isinstance(it, dict)
+    ]
+    return _json(G.purge_trashed(items))
+
+
 @PromptServer.instance.routes.post(P + "/api/trash/empty")
 async def api_trash_empty(request):
     return _json(G.empty_trash())
+
+
+@PromptServer.instance.routes.get(P + "/api/events")
+async def api_events(request):
+    """Long-polling フォールバック：since より新しいリアルタイムイベントを待機して返す。"""
+    since = _int(request.query.get("since"), 0) or 0
+    timeout = min(max(_float(request.query.get("timeout"), 20.0) or 20.0, 0.0), 25.0)
+    G.touch_poll()
+    cur, evs = G.events_since(since)
+    if evs or timeout <= 0:
+        return _json({"ok": True, "seq": cur, "events": evs, "counts": G.rating_counts("comfyui")})
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        G.touch_poll()
+        await asyncio.sleep(0.35)
+        cur, evs = G.events_since(since)
+        if evs:
+            return _json({"ok": True, "seq": cur, "events": evs, "counts": G.rating_counts("comfyui")})
+    return _json({"ok": True, "seq": cur, "events": []})
+
+
+@PromptServer.instance.routes.post(P + "/api/check")
+async def api_check_new(request):
+    items = await asyncio.to_thread(G.check_new_images, "comfyui")
+    return _json({"ok": True, "added": len(items), "counts": G.rating_counts("comfyui")})
+
+
+@PromptServer.instance.routes.get(P + "/ws")
+async def ws_gallery(request):
+    ws = web.WebSocketResponse(heartbeat=25.0)
+    await ws.prepare(request)
+    loop = asyncio.get_running_loop()
+    q = asyncio.Queue(maxsize=64)
+    cid = G.ws_register(loop, q)
+    cur_seq, _ = G.events_since(0)
+    try:
+        await ws.send_json({
+            "type": "hello",
+            "event_seq": cur_seq,
+            "rating_counts": G.rating_counts("comfyui"),
+        })
+
+        async def _pump():
+            while not ws.closed:
+                msg = await q.get()
+                if ws.closed:
+                    break
+                await ws.send_json(msg)
+
+        pump_task = asyncio.create_task(_pump())
+        try:
+            async for msg in ws:
+                if msg.type == web.WSMsgType.TEXT:
+                    txt = (msg.data or "").strip()
+                    if txt == "ping":
+                        await ws.send_json({"type": "pong", "ts": time.time()})
+                    elif txt == "check":
+                        await asyncio.to_thread(G.check_new_images, "comfyui")
+                elif msg.type in (web.WSMsgType.ERROR, web.WSMsgType.CLOSE):
+                    break
+        finally:
+            pump_task.cancel()
+            try:
+                await pump_task
+            except BaseException:
+                pass
+    except Exception:
+        pass
+    finally:
+        G.ws_unregister(cid)
+    return ws
 
 
 @PromptServer.instance.routes.get(P + "/api/image")
 async def api_image(request):
     source = request.query.get("source", "comfyui")
     file = _safe_name(request.query.get("file", ""))
+    t_arg = request.query.get("thumb", "").strip().lower()
+    if t_arg in ("1", "true", "webp", "xs", "s", "m", "l", "xl"):
+        tier = t_arg if t_arg in G.THUMB_TIERS else G.DEFAULT_THUMB_TIER
+        tp = await asyncio.to_thread(G.ensure_thumb, source, file, tier)
+        if tp and os.path.isfile(tp):
+            cc = "private, max-age=604800, immutable" if request.query.get("v") else "private, max-age=3600"
+            return web.FileResponse(tp, headers={"Content-Type": "image/webp", "Cache-Control": cc})
     fp = G.image_path(source, file)
     if not fp:
         return _json({"error": "not found"}, 404)
@@ -459,7 +706,30 @@ async def api_boot(request):
     full = (G.load_settings().get("scan_mode") or "incremental") == "full"
     for src in ("comfyui",):
         results[src] = G.start_scan(src, force=full, refresh=not full)
+    G.ensure_danbooru_cron()
     return _json({"ok": True, "booted": results, "scan_mode": "full" if full else "incremental"})
+
+
+@PromptServer.instance.routes.get(P + "/api/danbooru/status")
+async def api_danbooru_status(request):
+    return _json(G.danbooru_cron_status())
+
+
+@PromptServer.instance.routes.post(P + "/api/danbooru/sync")
+async def api_danbooru_sync(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    force = bool((data or {}).get("force", True))
+    return _json(G.trigger_danbooru_sync(force=force))
+
+
+@PromptServer.instance.routes.get(P + "/api/danbooru/tags")
+async def api_danbooru_tags(request):
+    search = request.query.get("search", "")
+    limit = min(_int(request.query.get("limit"), 50) or 50, 500)
+    return _json({"items": G.danbooru_tags_search(search=search, limit=limit)})
 
 
 @PromptServer.instance.routes.get(P + "/api/tags")

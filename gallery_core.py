@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Gallery4ComfyUI · 核心引擎（发布版）
-================================
-- 双数据源：ComfyUI output / Stable Diffusion WebUI outputs
-- PNG metadata 解析（ComfyUI prompt/workflow + SD WebUI parameters）
-- 增量索引缓存、搜索/筛选/排序/分页、模型统计、收藏
-- 首次运行需配置 SD WebUI 根目录（存于插件 userdata/settings.json）
-零第三方依赖（ComfyUI 环境自带 aiohttp / folder_paths）。
+Comfinder · コアエンジン
+========================
+- ComfyUI output のスワイプ仕分け＆ギャラリー検索エンジン
+- PNG metadata 解析（ComfyUI prompt/workflow）
+- 増分インデックスキャッシュ、検索・絞り込み・並び替え・レーティング(★1〜3)・ゴミ箱タグ
 """
 import os, json, time, zlib, threading, re, random, shutil, datetime
 
@@ -19,12 +17,12 @@ PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 USERDATA = os.path.join(PLUGIN_DIR, "userdata")
 SETTINGS_FILE = os.path.join(USERDATA, "settings.json")
 INDEX_DIR = os.path.join(USERDATA, "index")
-DATA_DIR = os.path.join(PLUGIN_DIR, "data")   # 可选数据目录（画师库/WiLin备注，发布版不含）
+DATA_DIR = os.path.join(PLUGIN_DIR, "data")   # オプションデータディレクトリ
 
 
 def _data_file(name):
-    """数据文件查找：环境变量 GALLERY4_DATA_DIR 优先，其次插件目录 data/。不存在返回 ""。"""
-    env_dir = os.environ.get("GALLERY4_DATA_DIR", "").strip()
+    """データファイル検索：環境変数 COMFINDER_DATA_DIR（互換: GALLERY4_DATA_DIR）優先。"""
+    env_dir = (os.environ.get("COMFINDER_DATA_DIR", "") or os.environ.get("GALLERY4_DATA_DIR", "")).strip()
     for d in (env_dir, DATA_DIR):
         if not d:
             continue
@@ -672,6 +670,13 @@ def _scan_directory_impl(source, root, parser, exts=IMAGE_EXTS):
     _artist_cache.pop(source, None)
     _tag_cache.pop(source, None)
     _save_index(source, new_entries)
+    _schedule_thumb_warmup(source, new_entries)
+    ws_broadcast({
+        "type": "index_updated",
+        "source": source,
+        "total": len(new_entries),
+        "rating_counts": rating_counts(source, new_entries),
+    })
     return new_entries
 
 
@@ -779,6 +784,7 @@ def start_scan(source, force=False, refresh=False):
             if not (_indexes.get(source) or {}).get("ready"):
                 _indexes[source] = {"entries": cached, "ready": True, "busy": False, "seq": 1,
                                     "total": len(cached), "scanned": len(cached)}
+        _schedule_thumb_warmup(source, cached)
         if not refresh:
             return {"ok": True, "ready": True}
         # 增量：磁盘缓存立刻可用（UI 秒开），后台线程只解析新增/变更文件
@@ -815,6 +821,7 @@ def get_index(source):
         with _indexes_lock:
             _indexes[source] = {"entries": cached, "ready": True, "busy": False, "seq": 0,
                                 "total": len(cached), "scanned": len(cached)}
+        _schedule_thumb_warmup(source, cached)
         return cached, True
     return [], False
 
@@ -856,6 +863,392 @@ def save_fav(source, file, on):
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# レーティング（1★ / 2★ / 3★） & ゴミ箱タグ 永続化
+# ---------------------------------------------------------------------------
+RATINGS_FILE = os.path.join(USERDATA, "ratings.json")
+TRASHED_FILE = os.path.join(USERDATA, "trashed.json")
+_ratings_cache = None
+_ratings_lock = threading.Lock()
+_trashed_cache = None
+_trashed_lock = threading.Lock()
+
+
+def _rating_key(source, file):
+    return "%s:%s" % (source or "comfyui", file or "")
+
+
+def load_ratings():
+    global _ratings_cache
+    with _ratings_lock:
+        if _ratings_cache is None:
+            try:
+                with open(RATINGS_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _ratings_cache = {
+                    str(k): int(v)
+                    for k, v in (raw.items() if isinstance(raw, dict) else [])
+                    if int(v) in (1, 2, 3)
+                }
+            except Exception:
+                _ratings_cache = {}
+        return dict(_ratings_cache)
+
+
+def _save_ratings_unlocked(d):
+    os.makedirs(USERDATA, exist_ok=True)
+    tmp = RATINGS_FILE + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=1)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, RATINGS_FILE)
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        raise
+
+
+def load_trashed():
+    global _trashed_cache
+    with _trashed_lock:
+        if _trashed_cache is None:
+            try:
+                with open(TRASHED_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _trashed_cache = {
+                    str(k): float(v)
+                    for k, v in (raw.items() if isinstance(raw, dict) else [])
+                }
+            except Exception:
+                _trashed_cache = {}
+        return dict(_trashed_cache)
+
+
+def _save_trashed_unlocked(d):
+    os.makedirs(USERDATA, exist_ok=True)
+    tmp = TRASHED_FILE + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=1)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, TRASHED_FILE)
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        raise
+
+
+def is_trashed(source, file):
+    return _rating_key(source, file) in load_trashed()
+
+
+def get_rating(source, file):
+    return load_ratings().get(_rating_key(source, file), 0)
+
+
+def rate_image(source, file, rating):
+    global _ratings_cache
+    source = source or "comfyui"
+    if not file:
+        return {"ok": False, "error": "ファイル名が指定されていません"}
+    try:
+        r = int(rating) if rating not in (None, "") else 0
+    except Exception:
+        return {"ok": False, "error": "無効なレーティングです"}
+    if r not in (0, 1, 2, 3):
+        return {"ok": False, "error": "レーティングは 0〜3 で指定してください"}
+    k = _rating_key(source, file)
+    with _ratings_lock:
+        if _ratings_cache is None:
+            try:
+                with open(RATINGS_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                cur = {
+                    str(kk): int(vv)
+                    for kk, vv in (raw.items() if isinstance(raw, dict) else [])
+                    if int(vv) in (1, 2, 3)
+                }
+            except Exception:
+                cur = {}
+        else:
+            cur = dict(_ratings_cache)
+        prev = cur.get(k, 0)
+        if r == 0:
+            cur.pop(k, None)
+        else:
+            cur[k] = r
+        _save_ratings_unlocked(cur)
+        _ratings_cache = cur
+    cnt = rating_counts(source)
+    ws_broadcast({
+        "type": "state_changed",
+        "action": "rate",
+        "source": source,
+        "file": file,
+        "rating": r,
+        "trashed": is_trashed(source, file),
+        "rating_counts": cnt,
+    })
+    return {"ok": True, "source": source, "file": file, "rating": r, "prev_rating": prev,
+            "counts": cnt}
+
+
+def rating_counts(source="comfyui", entries=None):
+    if entries is None:
+        entries, _ = get_index(source)
+        entries = list(entries)
+    rmap = load_ratings()
+    tmap = load_trashed()
+    c = {"all": 0, "unrated": 0, "1": 0, "2": 0, "3": 0, "rated": 0, "trash": 0}
+    for e in entries:
+        k = _rating_key(source, e.get("file"))
+        if k in tmap:
+            c["trash"] += 1
+            continue
+        c["all"] += 1
+        v = rmap.get(k, 0)
+        if v in (1, 2, 3):
+            c[str(v)] += 1
+            c["rated"] += 1
+        else:
+            c["unrated"] += 1
+    return c
+
+
+# ---------------------------------------------------------------------------
+# リアルタイム WebSocket 通知 & 出力ディレクトリ監視
+# ---------------------------------------------------------------------------
+_ws_clients = {}  # cid -> (loop, asyncio.Queue)
+_ws_lock = threading.Lock()
+_ws_next_id = 0
+_watcher_thread = None
+_event_seq = 0
+_recent_events = []  # [(seq, payload)] capped at 100 for long-polling fallback
+_check_lock = threading.Lock()
+
+
+def _ws_put(q, payload):
+    try:
+        if q.full():
+            try:
+                q.get_nowait()
+            except Exception:
+                pass
+        q.put_nowait(payload)
+    except Exception:
+        pass
+
+
+def ws_broadcast(payload):
+    global _event_seq
+    with _ws_lock:
+        _event_seq += 1
+        seq = _event_seq
+        msg = dict(payload)
+        msg["event_seq"] = seq
+        _recent_events.append((seq, msg))
+        if len(_recent_events) > 100:
+            del _recent_events[:-100]
+        targets = list(_ws_clients.values())
+    for loop, q in targets:
+        try:
+            if not loop.is_closed():
+                loop.call_soon_threadsafe(_ws_put, q, msg)
+        except Exception:
+            pass
+
+
+def events_since(since_seq=0):
+    with _ws_lock:
+        cur = _event_seq
+        evs = [m for s, m in _recent_events if s > since_seq]
+    return cur, evs
+
+
+def ensure_watcher():
+    global _watcher_thread
+    with _ws_lock:
+        if _watcher_thread is None or not _watcher_thread.is_alive():
+            _watcher_thread = threading.Thread(target=_watch_loop, daemon=True)
+            _watcher_thread.start()
+    try:
+        ensure_danbooru_cron()
+    except Exception:
+        pass
+
+
+def ws_register(loop, q):
+    global _ws_next_id
+    with _ws_lock:
+        _ws_next_id += 1
+        cid = _ws_next_id
+        _ws_clients[cid] = (loop, q)
+    ensure_watcher()
+    return cid
+
+
+def ws_unregister(cid):
+    with _ws_lock:
+        _ws_clients.pop(cid, None)
+
+
+def _is_image_ready(fp):
+    try:
+        st = os.stat(fp)
+        if st.st_size <= 0:
+            return False
+        if fp.lower().endswith(".png"):
+            if st.st_size < 24:
+                return False
+            with open(fp, "rb") as f:
+                f.seek(-12, os.SEEK_END)
+                tail = f.read(12)
+            return b"IEND" in tail
+        return (time.time() - st.st_mtime) >= 0.4
+    except Exception:
+        return False
+
+
+def _format_item(source, e, rmap=None, tmap=None):
+    if rmap is None:
+        rmap = load_ratings()
+    if tmap is None:
+        tmap = load_trashed()
+    it = {k: e.get(k) for k in ("file", "mtime", "size", "positive", "negative", "model", "params", "loras")}
+    it["artists"] = _entry_artists(e)
+    k = _rating_key(source, e.get("file"))
+    it["rating"] = rmap.get(k, 0)
+    it["trashed"] = k in tmap
+    return it
+
+
+def check_new_images(source="comfyui"):
+    """出力ディレクトリの新規・削除ファイルを検出し、変更があればインデックス更新＆ブロードキャスト。"""
+    if not _check_lock.acquire(blocking=False):
+        return []
+    try:
+        root = folder_paths.get_output_directory() if (source == "comfyui" and folder_paths) else None
+        if not root or not os.path.isdir(root):
+            return []
+        with _indexes_lock:
+            st = _indexes.get(source)
+            ready = bool(st and st.get("ready"))
+            busy = bool(st and st.get("busy"))
+            known = {e.get("file") for e in (st.get("entries") or [])} if ready else None
+        if not ready or busy or known is None:
+            return []
+        new_entries = []
+        disk_rels = set()
+        walk_ok = True
+        try:
+            for fp in _iter_files(root, IMAGE_EXTS):
+                rel = os.path.relpath(fp, root).replace("\\", "/")
+                disk_rels.add(rel)
+                if rel not in known and _is_image_ready(fp):
+                    try:
+                        fst = os.stat(fp)
+                        entry = _parser_comfyui(fp)
+                        entry.update({
+                            "file": rel, "mtime": fst.st_mtime, "size": fst.st_size,
+                            "_k": [fst.st_mtime_ns, fst.st_size], "pv": _PARSE_VERSION,
+                        })
+                        new_entries.append(entry)
+                    except Exception:
+                        pass
+        except Exception:
+            walk_ok = False
+        removed_files = set()
+        if walk_ok and disk_rels:
+            missing = known - disk_rels
+            for mrel in missing:
+                fp_chk = os.path.join(root, os.path.normpath(mrel))
+                if not os.path.exists(fp_chk):
+                    removed_files.add(mrel)
+        if not new_entries and not removed_files:
+            return []
+        snapshot = None
+        with _indexes_lock:
+            st = _indexes.get(source)
+            if st and st.get("ready") and not st.get("busy"):
+                cur = list(st.get("entries") or [])
+                if removed_files:
+                    cur = [e for e in cur if e.get("file") not in removed_files]
+                cur_files = {e.get("file") for e in cur}
+                actually_added = [e for e in new_entries if e.get("file") not in cur_files]
+                cur.extend(actually_added)
+                st["entries"] = cur
+                st["total"] = len(cur)
+                st["scanned"] = len(cur)
+                st["seq"] = int(st.get("seq") or 0) + 1
+                snapshot = list(cur)
+                new_entries = actually_added
+        if snapshot is not None:
+            _artist_cache.pop(source, None)
+            _tag_cache.pop(source, None)
+            try:
+                _save_index(source, snapshot)
+            except Exception:
+                pass
+            if new_entries:
+                new_entries.sort(key=lambda e: e.get("mtime", 0), reverse=True)
+                _schedule_thumb_warmup(source, new_entries)
+                rmap = load_ratings()
+                tmap = load_trashed()
+                fmt = [_format_item(source, e, rmap, tmap) for e in new_entries]
+                ws_broadcast({
+                    "type": "new_images",
+                    "source": source,
+                    "items": fmt,
+                    "rating_counts": rating_counts(source, snapshot),
+                })
+                return fmt
+            elif removed_files:
+                ws_broadcast({
+                    "type": "index_updated",
+                    "source": source,
+                    "total": len(snapshot),
+                    "rating_counts": rating_counts(source, snapshot),
+                })
+        return []
+    finally:
+        _check_lock.release()
+
+
+_last_poll_touch = 0.0
+
+
+def touch_poll():
+    global _last_poll_touch
+    _last_poll_touch = time.time()
+    ensure_watcher()
+
+
+def _watch_loop():
+    """WebSocket または long-polling 接続中に ComfyUI output を監視してリアルタイム配信する。"""
+    source = "comfyui"
+    while True:
+        with _ws_lock:
+            has_ws = bool(_ws_clients)
+        if not has_ws and (time.time() - _last_poll_touch) > 45.0:
+            return
+        t0 = time.time()
+        try:
+            check_new_images(source)
+        except Exception:
+            pass
+        elapsed = time.time() - t0
+        time.sleep(max(0.75, min(5.0, elapsed * 4)))
+
+
 FAV_ART_SLOT = None
 
 
@@ -892,11 +1285,10 @@ def _artist_tokens(name):
     return re.sub(r"\s+", " ", s)
 
 
-def query(source, q="", model="", sampler="", lora="", steps_min=None, steps_max=None,
-          cfg_min=None, cfg_max=None, min_w=None, min_h=None, fav_only=False,
-          sort="newest", page=1, page_size=60, tags="", artist="", artists_all=None,
-          artists_any=None, artist_min=None, seed=None):
-    entries, ready = get_index(source)
+def _filter_entries(source, entries, q="", model="", sampler="", lora="",
+                    steps_min=None, steps_max=None, cfg_min=None, cfg_max=None,
+                    min_w=None, min_h=None, fav_only=False, tags="", artist="",
+                    artists_all=None, artists_any=None, artist_min=None):
     if artist_min:
         # 画师数量过滤：一张图里用到的**不同画师个数** ≥ N（不要求是某个固定组合）
         try:
@@ -958,12 +1350,47 @@ def query(source, q="", model="", sampler="", lora="", steps_min=None, steps_max
         favs = {(it.get("source", "comfyui"), it.get("file"))
                 for it in load_folders().get("默认收藏", [])}
         entries = [e for e in entries if (source, e.get("file")) in favs]
+    return entries
+
+
+def query(source, q="", model="", sampler="", lora="", steps_min=None, steps_max=None,
+          cfg_min=None, cfg_max=None, min_w=None, min_h=None, fav_only=False,
+          sort="newest", page=1, page_size=60, tags="", artist="", artists_all=None,
+          artists_any=None, artist_min=None, seed=None, rating=""):
+    entries, ready = get_index(source)
+    entries = _filter_entries(
+        source, list(entries), q=q, model=model, sampler=sampler, lora=lora,
+        steps_min=steps_min, steps_max=steps_max, cfg_min=cfg_min, cfg_max=cfg_max,
+        min_w=min_w, min_h=min_h, fav_only=fav_only, tags=tags, artist=artist,
+        artists_all=artists_all, artists_any=artists_any, artist_min=artist_min,
+    )
+    rmap = load_ratings()
+    tmap = load_trashed()
+    counts = rating_counts(source, entries)
+    rf = str(rating or "").strip().lower()
+    if rf in ("trash", "trashed"):
+        entries = [e for e in entries if _rating_key(source, e.get("file")) in tmap]
+    else:
+        entries = [e for e in entries if _rating_key(source, e.get("file")) not in tmap]
+        if rf in ("unrated", "0"):
+            entries = [e for e in entries if rmap.get(_rating_key(source, e.get("file")), 0) == 0]
+        elif rf == "rated":
+            entries = [e for e in entries if rmap.get(_rating_key(source, e.get("file")), 0) in (1, 2, 3)]
+        elif rf and rf != "all":
+            want_r = {int(x) for x in rf.split(",") if x.strip().isdigit() and int(x.strip()) in (1, 2, 3)}
+            if want_r:
+                entries = [e for e in entries if rmap.get(_rating_key(source, e.get("file")), 0) in want_r]
     if sort == "newest":
-        entries.sort(key=lambda e: e.get("mtime", 0), reverse=True)
+        if rf in ("trash", "trashed"):
+            entries.sort(key=lambda e: (tmap.get(_rating_key(source, e.get("file")), 0), e.get("mtime", 0)), reverse=True)
+        else:
+            entries.sort(key=lambda e: e.get("mtime", 0), reverse=True)
     elif sort == "oldest":
         entries.sort(key=lambda e: e.get("mtime", 0))
     elif sort == "name":
         entries.sort(key=lambda e: str(e.get("file", "")).lower())
+    elif sort == "rating":
+        entries.sort(key=lambda e: (rmap.get(_rating_key(source, e.get("file")), 0), e.get("mtime", 0)), reverse=True)
     elif sort == "random":
         # 必须用「同一种子」洗牌，而且**绝不能就地洗**：
         # 原先没有种子，每次请求都重新洗 —— 网格第 N 页和灯箱续翻请求的结果顺序不同，
@@ -978,12 +1405,53 @@ def query(source, q="", model="", sampler="", lora="", steps_min=None, steps_max
     total = len(entries)
     start = (int(page) - 1) * int(page_size)
     page_entries = entries[start:start + int(page_size)]
-    items = [{k: e.get(k) for k in ("file", "mtime", "size", "positive", "negative", "model", "params", "loras")}
-             for e in page_entries]
-    # 每张图带上画师名（同图去重）：图库卡片与灯箱都要显示；多画师时全部列出
-    for _it, _e in zip(items, page_entries):
-        _it["artists"] = _entry_artists(_e)
-    return {"total": total, "page": int(page), "items": items, "ready": ready}
+    items = [_format_item(source, _e, rmap, tmap) for _e in page_entries]
+    return {"total": total, "page": int(page), "items": items, "ready": ready, "rating_counts": counts}
+
+
+def query_random(source, q="", model="", sampler="", lora="", steps_min=None, steps_max=None,
+                 cfg_min=None, cfg_max=None, min_w=None, min_h=None, fav_only=False,
+                 tags="", artist="", artists_all=None, artists_any=None, artist_min=None,
+                 rating="rated", count=20, exclude=""):
+    """完全ランダム取得：常にゴミ箱を除外し、星付け済み(★1〜3)のみから重複最小限でランダム抽出する。"""
+    entries, ready = get_index(source)
+    entries = _filter_entries(
+        source, list(entries), q=q, model=model, sampler=sampler, lora=lora,
+        steps_min=steps_min, steps_max=steps_max, cfg_min=cfg_min, cfg_max=cfg_max,
+        min_w=min_w, min_h=min_h, fav_only=fav_only, tags=tags, artist=artist,
+        artists_all=artists_all, artists_any=artists_any, artist_min=artist_min,
+    )
+    rmap = load_ratings()
+    tmap = load_trashed()
+    rf = str(rating or "").strip().lower()
+    want_r = {1, 2, 3}
+    if rf and rf not in ("rated", "all", "unrated", "0", "trash", "trashed"):
+        parsed = {int(x) for x in rf.split(",") if x.strip().isdigit() and int(x.strip()) in (1, 2, 3)}
+        if parsed:
+            want_r = parsed
+    entries = [
+        e for e in entries
+        if _rating_key(source, e.get("file")) not in tmap
+        and rmap.get(_rating_key(source, e.get("file")), 0) in want_r
+    ]
+    if not entries:
+        return {"items": [], "ready": ready}
+    pool = entries
+    if exclude and len(pool) > 1:
+        pool_no_ex = [e for e in pool if e.get("file") != exclude]
+        if pool_no_ex:
+            pool = pool_no_ex
+    n = max(1, min(int(count or 20), 100))
+    if len(pool) >= n:
+        picked = random.sample(pool, n)
+    else:
+        picked = random.sample(pool, len(pool))
+        while len(picked) < n:
+            prev_file = picked[-1].get("file")
+            cands = [e for e in entries if e.get("file") != prev_file] if len(entries) > 1 else entries
+            picked.append(random.choice(cands))
+    items = [_format_item(source, _e, rmap, tmap) for _e in picked]
+    return {"items": items, "ready": ready}
 
 
 def _num(e, key, default=0):
@@ -1129,61 +1597,444 @@ def image_path(source, file):
     return None
 
 
+# ---------------------------------------------------------------------------
+# WebP 画像キャッシュ（xs=200px / s=320px / m=640px / l=960px / xl=元解像度）
+# ---------------------------------------------------------------------------
+THUMBS_DIR = os.path.join(USERDATA, "thumbs")
+THUMB_TIERS = {
+    "xs": 200,
+    "s": 320,
+    "m": 640,
+    "l": 960,
+    "xl": 0,   # 0 = リサイズなし（解像度そのまま）
+}
+DEFAULT_THUMB_TIER = "m"
+THUMB_MAX_EDGE = THUMB_TIERS[DEFAULT_THUMB_TIER]
+THUMB_QUALITY = 64
+_thumb_locks = [threading.Lock() for _ in range(32)]
+_thumb_warm_lock = threading.Lock()
+_thumb_warm_queue = []
+_thumb_warm_seen = set()
+_thumb_warm_running = False
+
+try:
+    from PIL import Image as _PIL_Image, ImageOps as _PIL_ImageOps
+except Exception:
+    _PIL_Image = None
+    _PIL_ImageOps = None
+
+
+def _norm_thumb_tier(tier):
+    t = str(tier or "").strip().lower()
+    return t if t in THUMB_TIERS else DEFAULT_THUMB_TIER
+
+
+def thumb_path(source, file, tier=DEFAULT_THUMB_TIER):
+    source = str(source or "comfyui").strip() or "comfyui"
+    if not file or os.path.splitext(file)[1].lower() not in IMAGE_EXTS:
+        return None
+    t = _norm_thumb_tier(tier)
+    src_dir = os.path.normpath(os.path.join(THUMBS_DIR, os.path.basename(source), t))
+    safe = os.path.normpath(str(file).replace("\\", "/").lstrip("/"))
+    if safe in ("", ".", "..") or safe.startswith(".."):
+        return None
+    tp = os.path.normpath(os.path.join(src_dir, safe + ".webp"))
+    if os.path.commonpath([src_dir, tp]) != src_dir:
+        return None
+    return tp
+
+
+def remove_thumb(source, file):
+    for t in THUMB_TIERS:
+        tp = thumb_path(source, file, tier=t)
+        if tp and os.path.isfile(tp):
+            try:
+                os.remove(tp)
+            except OSError:
+                pass
+    # 旧フラット配置のキャッシュも掃除
+    src_root = os.path.normpath(os.path.join(THUMBS_DIR, os.path.basename(str(source or "comfyui").strip() or "comfyui")))
+    safe = os.path.normpath(str(file or "").replace("\\", "/").lstrip("/"))
+    if safe and safe not in (".", "..") and not safe.startswith(".."):
+        legacy = os.path.normpath(os.path.join(src_root, safe + ".webp"))
+        if os.path.commonpath([src_root, legacy]) == src_root and os.path.isfile(legacy):
+            try:
+                os.remove(legacy)
+            except OSError:
+                pass
+
+
+def ensure_thumb(source, file, tier=DEFAULT_THUMB_TIER):
+    """WebP 圧縮キャッシュを生成（xs=200 / s=320 / m=640 / l=960 / xl=元解像度、既存かつ最新なら即返す）。動画や失敗時は None を返し元画像へフォールバック。"""
+    if _PIL_Image is None:
+        return None
+    t = _norm_thumb_tier(tier)
+    max_edge = THUMB_TIERS[t]
+    fp = image_path(source, file)
+    if not fp:
+        return None
+    tp = thumb_path(source, file, tier=t)
+    if not tp:
+        return None
+    lk = _thumb_locks[zlib.crc32((f"{source}:{t}:{file}").encode("utf-8", "ignore")) & 31]
+    with lk:
+        try:
+            orig_st = os.stat(fp)
+        except OSError:
+            return None
+        if os.path.isfile(tp):
+            try:
+                tp_st = os.stat(tp)
+                if tp_st.st_size > 0 and tp_st.st_mtime_ns >= orig_st.st_mtime_ns:
+                    return tp
+            except OSError:
+                pass
+        tmp = f"{tp}.{os.getpid()}.{threading.get_ident()}.tmp"
+        try:
+            os.makedirs(os.path.dirname(tp), exist_ok=True)
+            with _PIL_Image.open(fp) as im:
+                if _PIL_ImageOps is not None:
+                    im = _PIL_ImageOps.exif_transpose(im)
+                if max_edge > 0 and max(im.size) > max_edge:
+                    im.thumbnail((max_edge, max_edge), _PIL_Image.Resampling.LANCZOS)
+                if "A" in im.getbands():
+                    if im.mode != "RGBA":
+                        im = im.convert("RGBA")
+                elif im.mode != "RGB":
+                    im = im.convert("RGB")
+                im.save(tmp, format="WEBP", quality=THUMB_QUALITY, method=4)
+            os.utime(tmp, ns=(orig_st.st_atime_ns, orig_st.st_mtime_ns))
+            os.replace(tmp, tp)
+            return tp
+        except Exception:
+            try:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+            except OSError:
+                pass
+            return None
+
+
+def _thumb_warm_worker():
+    global _thumb_warm_running
+    while True:
+        with _thumb_warm_lock:
+            if not _thumb_warm_queue:
+                _thumb_warm_running = False
+                return
+            src, rel, tier = _thumb_warm_queue.pop(0)
+            _thumb_warm_seen.discard((src, rel, tier))
+        try:
+            ensure_thumb(src, rel, tier=tier)
+        except Exception:
+            pass
+        time.sleep(0.005)
+
+
+def _schedule_thumb_warmup(source, entries, tier=DEFAULT_THUMB_TIER):
+    """未生成の WebP サムネイルをバックグラウンドで静かに事前作成する。"""
+    global _thumb_warm_running
+    if _PIL_Image is None or not entries:
+        return
+    src = source or "comfyui"
+    t = _norm_thumb_tier(tier)
+    added = 0
+    with _thumb_warm_lock:
+        for e in entries:
+            rel = e.get("file") if isinstance(e, dict) else None
+            if not rel:
+                continue
+            tp = thumb_path(src, rel, tier=t)
+            if not tp:
+                continue
+            if os.path.isfile(tp):
+                continue
+            key = (src, rel, t)
+            if key not in _thumb_warm_seen:
+                _thumb_warm_seen.add(key)
+                _thumb_warm_queue.append(key)
+                added += 1
+        if added and not _thumb_warm_running:
+            _thumb_warm_running = True
+            threading.Thread(target=_thumb_warm_worker, daemon=True).start()
+
+
 TRASH_DIR = os.path.join(USERDATA, "trash")
 
 
-def delete_image(source, file):
-    """画像ファイルを userdata/trash/<source>/ へ移動し、索引と收藏夹からも除去する。
-    完全削除はしない（復旧可能）。戻り値: {"ok": bool, ...}"""
+def trash_image(source, file):
+    """画像にゴミ箱タグを付与する（ファイル自体はディスクから消さず、復元可能）。"""
+    global _trashed_cache
+    source = source or "comfyui"
     fp = image_path(source, file)
     if not fp:
         return {"ok": False, "error": "not found"}
+    k = _rating_key(source, file)
+    prev_rating = get_rating(source, file)
+    with _trashed_lock:
+        if _trashed_cache is None:
+            try:
+                with open(TRASHED_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                cur = {str(kk): float(vv) for kk, vv in (raw.items() if isinstance(raw, dict) else [])}
+            except Exception:
+                cur = {}
+        else:
+            cur = dict(_trashed_cache)
+        cur[k] = time.time()
+        _save_trashed_unlocked(cur)
+        globals()["_trashed_cache"] = cur
+    _artist_cache.pop(source, None)
+    _tag_cache.pop(source, None)
+    cnt = rating_counts(source)
+    ws_broadcast({
+        "type": "state_changed",
+        "action": "trash",
+        "source": source,
+        "file": file,
+        "rating": prev_rating,
+        "trashed": True,
+        "rating_counts": cnt,
+    })
+    return {"ok": True, "source": source, "file": file, "trashed": True,
+            "prev_rating": prev_rating, "counts": cnt}
+
+
+def delete_image(source, file):
+    """ゴミ箱タグを付与する（完全削除ではない）。"""
+    return trash_image(source, file)
+
+
+def restore_image(source, file, trash_rel="", prev_rating=None, prev_folders=None):
+    """ゴミ箱タグを解除して元のプールへ戻す（レガシーの userdata/trash/ にある場合も復元）。"""
+    global _trashed_cache
+    source = source or "comfyui"
+    if not file:
+        return {"ok": False, "error": "missing file"}
+    k = _rating_key(source, file)
+    was_tagged = False
+    with _trashed_lock:
+        if _trashed_cache is None:
+            try:
+                with open(TRASHED_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                cur = {str(kk): float(vv) for kk, vv in (raw.items() if isinstance(raw, dict) else [])}
+            except Exception:
+                cur = {}
+        else:
+            cur = dict(_trashed_cache)
+        if k in cur:
+            cur.pop(k, None)
+            _save_trashed_unlocked(cur)
+            globals()["_trashed_cache"] = cur
+            was_tagged = True
+
+    if was_tagged and image_path(source, file):
+        if prev_rating not in (None, ""):
+            try:
+                pr = int(prev_rating)
+                if pr in (0, 1, 2, 3):
+                    rate_image(source, file, pr)
+            except Exception:
+                pass
+        _artist_cache.pop(source, None)
+        _tag_cache.pop(source, None)
+        cur_r = get_rating(source, file)
+        cnt = rating_counts(source)
+        ws_broadcast({
+            "type": "state_changed",
+            "action": "restore",
+            "source": source,
+            "file": file,
+            "rating": cur_r,
+            "trashed": False,
+            "rating_counts": cnt,
+        })
+        return {"ok": True, "source": source, "file": file, "trashed": False,
+                "rating": cur_r, "counts": cnt}
+
+    # レガシー互換: 旧仕様で userdata/trash/ に物理移動されていたファイルの復元
     if source == "comfyui":
         root = folder_paths.get_output_directory() if folder_paths else None
+        parser = _parser_comfyui
+    elif source == "video":
+        root = None
+        if folder_paths and folder_paths.get_output_directory():
+            vdir = os.path.join(folder_paths.get_output_directory(), "video")
+            root = vdir if os.path.isdir(vdir) else folder_paths.get_output_directory()
+        if not root:
+            root = webui_outputs_dir()
+        parser = _parser_video
     else:
         root = webui_outputs_dir()
-    rel = os.path.relpath(fp, root) if root else os.path.basename(fp)
-    dest_dir = os.path.join(TRASH_DIR, source, os.path.dirname(rel))
-    os.makedirs(dest_dir, exist_ok=True)
-    dest = os.path.join(dest_dir, os.path.basename(rel))
-    if os.path.exists(dest):
-        base, ext = os.path.splitext(dest)
-        dest = base + "." + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ext
-    shutil.move(fp, dest)
-    # 索引（メモリ＋キャッシュ）から除去
+        parser = _parser_webui
+    if not root:
+        return {"ok": False, "error": "ソースフォルダを利用できません"}
+    norm_root = os.path.normpath(root)
+    dest_fp = os.path.normpath(os.path.join(norm_root, os.path.normpath(file)))
+    if os.path.commonpath([norm_root, dest_fp]) != norm_root:
+        return {"ok": False, "error": "不正なパスです"}
+    norm_trash = os.path.normpath(TRASH_DIR)
+    cand = ""
+    if trash_rel:
+        c = os.path.normpath(os.path.join(norm_trash, trash_rel.replace("/", os.sep)))
+        if os.path.commonpath([norm_trash, c]) == norm_trash and os.path.isfile(c):
+            cand = c
+    if not cand:
+        c = os.path.normpath(os.path.join(norm_trash, source, os.path.normpath(file)))
+        if os.path.commonpath([norm_trash, c]) == norm_trash and os.path.isfile(c):
+            cand = c
+    if not cand:
+        if was_tagged:
+            return {"ok": True, "source": source, "file": file, "trashed": False,
+                    "rating": get_rating(source, file), "counts": rating_counts(source)}
+        return {"ok": False, "error": "ゴミ箱にファイルが見つかりません"}
+    if os.path.exists(dest_fp):
+        return {"ok": False, "error": "復元先に同名ファイルが既に存在します"}
+    os.makedirs(os.path.dirname(dest_fp), exist_ok=True)
+    shutil.move(cand, dest_fp)
+    try:
+        st = os.stat(dest_fp)
+        entry = parser(dest_fp)
+        entry.update({"file": file.replace("\\", "/"), "mtime": st.st_mtime, "size": st.st_size,
+                      "_k": [st.st_mtime_ns, st.st_size], "pv": _PARSE_VERSION})
+    except Exception:
+        entry = {"file": file.replace("\\", "/"), "mtime": time.time(), "size": 0,
+                 "positive": "", "negative": "", "model": "", "params": {}, "loras": [],
+                 "pv": _PARSE_VERSION}
     snapshot = None
+    get_index(source)
     with _indexes_lock:
-        st = _indexes.get(source)
-        if st and st.get("entries") is not None:
-            st["entries"] = [e for e in st["entries"] if e.get("file") != file]
-            st["total"] = len(st["entries"])
-            snapshot = list(st["entries"])
+        idx = _indexes.get(source)
+        if idx is None:
+            idx = _indexes[source] = {"entries": [], "ready": True, "busy": False, "seq": 1, "total": 0, "scanned": 0}
+        entries = [e for e in (idx.get("entries") or []) if e.get("file") != entry["file"]]
+        entries.append(entry)
+        idx["entries"] = entries
+        idx["total"] = len(entries)
+        idx["ready"] = True
+        snapshot = list(entries)
     if snapshot is not None:
         try:
             _save_index(source, snapshot)
         except Exception:
             pass
-    # 收藏夹（folders.json）から除去
     try:
-        data = load_folders()
-        changed = False
-        for name in list(data.keys()):
-            items = data.get(name) or []
-            kept = [k for k in items
-                    if not (str(k.get("source", "comfyui")) == source and str(k.get("file", "")) == file)]
-            if len(kept) != len(items):
-                data[name] = kept
-                changed = True
-        if changed:
-            save_folders(data)
+        pr = int(prev_rating or 0)
     except Exception:
-        pass
-    return {"ok": True, "trashed": dest}
+        pr = 0
+    if pr in (1, 2, 3):
+        rate_image(source, entry["file"], pr)
+    for fn in (prev_folders or []):
+        if fn:
+            try:
+                folder_add(fn, [{"source": source, "file": entry["file"]}])
+            except Exception:
+                pass
+    _artist_cache.pop(source, None)
+    _tag_cache.pop(source, None)
+    cnt = rating_counts(source)
+    ws_broadcast({
+        "type": "state_changed",
+        "action": "restore",
+        "source": source,
+        "file": entry["file"],
+        "rating": pr,
+        "trashed": False,
+        "rating_counts": cnt,
+    })
+    return {"ok": True, "source": source, "file": entry["file"], "trashed": False,
+            "rating": pr, "counts": cnt}
+
+
+def _purge_files_permanent(items):
+    """ゴミ箱タグ付き画像（複数可）をディスク・索引・フォルダ・レーティングから完全削除する。"""
+    tmap = load_trashed()
+    rmap = load_ratings()
+    removed = 0
+    freed = 0
+    by_source_removed = {}
+    for it in items or []:
+        src = str(it.get("source") or "comfyui")
+        fn = str(it.get("file") or "")
+        if not fn:
+            continue
+        k = _rating_key(src, fn)
+        if k not in tmap:
+            continue
+        fp = image_path(src, fn)
+        if fp and os.path.isfile(fp):
+            try:
+                freed += os.path.getsize(fp)
+                os.remove(fp)
+            except OSError:
+                continue
+        removed += 1
+        remove_thumb(src, fn)
+        by_source_removed.setdefault(src, set()).add(fn)
+        tmap.pop(k, None)
+        rmap.pop(k, None)
+
+    if removed:
+        with _trashed_lock:
+            _save_trashed_unlocked(tmap)
+            globals()["_trashed_cache"] = tmap
+        with _ratings_lock:
+            _save_ratings_unlocked(rmap)
+            globals()["_ratings_cache"] = rmap
+        for src, fset in by_source_removed.items():
+            snapshot = None
+            with _indexes_lock:
+                st = _indexes.get(src)
+                if st and st.get("entries") is not None:
+                    st["entries"] = [e for e in st["entries"] if e.get("file") not in fset]
+                    st["total"] = len(st["entries"])
+                    snapshot = list(st["entries"])
+            if snapshot is not None:
+                try:
+                    _save_index(src, snapshot)
+                except Exception:
+                    pass
+            _artist_cache.pop(src, None)
+            _tag_cache.pop(src, None)
+        try:
+            data = load_folders()
+            changed = False
+            for name in list(data.keys()):
+                f_items = data.get(name) or []
+                kept = [fk for fk in f_items
+                        if str(fk.get("file", "")) not in by_source_removed.get(str(fk.get("source", "comfyui")), set())]
+                if len(kept) != len(f_items):
+                    data[name] = kept
+                    changed = True
+            if changed:
+                save_folders(data)
+        except Exception:
+            pass
+    return removed, freed
+
+
+def purge_trashed(items):
+    """ゴミ箱ビューから選択した画像を完全削除する（ゴミ箱タグが付いているもののみ対象）。"""
+    removed, freed = _purge_files_permanent(items)
+    cnt = rating_counts("comfyui")
+    ws_broadcast({"type": "index_updated", "source": "comfyui", "rating_counts": cnt})
+    return {"ok": True, "removed": removed, "bytes": freed, "counts": cnt}
 
 
 def _trash_stats():
     total_files = 0
     total_bytes = 0
+    tmap = load_trashed()
+    for k in list(tmap.keys()):
+        src, _, fn = k.partition(":")
+        fp = image_path(src, fn)
+        if fp and os.path.isfile(fp):
+            try:
+                total_bytes += os.path.getsize(fp)
+                total_files += 1
+            except OSError:
+                pass
     if os.path.isdir(TRASH_DIR):
         for dirpath, _dirnames, filenames in os.walk(TRASH_DIR):
             for name in filenames:
@@ -1202,9 +2053,14 @@ def trash_info():
 
 
 def empty_trash():
-    """ゴミ箱の中身を完全に削除する（復旧不可）。"""
-    removed = 0
-    freed = 0
+    """ゴミ箱タグ付き画像＋レガシー userdata/trash/ を完全に削除する（復旧不可）。"""
+    tmap = load_trashed()
+    items = []
+    for k in tmap.keys():
+        src, _, fn = k.partition(":")
+        if fn:
+            items.append({"source": src, "file": fn})
+    removed, freed = _purge_files_permanent(items)
     if os.path.isdir(TRASH_DIR):
         for dirpath, _dirnames, filenames in os.walk(TRASH_DIR):
             for name in filenames:
@@ -1221,7 +2077,9 @@ def empty_trash():
                     os.rmdir(dirpath)
                 except OSError:
                     pass
-    return {"ok": True, "removed": removed, "bytes": freed}
+    cnt = rating_counts("comfyui")
+    ws_broadcast({"type": "index_updated", "source": "comfyui", "rating_counts": cnt})
+    return {"ok": True, "removed": removed, "bytes": freed, "counts": cnt}
 
 
 def raw_metadata(source, file):
@@ -1350,10 +2208,13 @@ def _artist_entries(source):
     if cached and now - cached[0] < 120:
         return cached[1]
     entries, _ = get_index(source)
+    tmap = load_trashed()
     agg = {}
     for e in entries:
-        mtimes = e.get("mtime") or 0
         fname = str(e.get("file") or "")
+        if _rating_key(source, fname) in tmap:
+            continue
+        mtimes = e.get("mtime") or 0
         for name in _entry_artists(e):
             key = name.lower()
             a = agg.get(key)
@@ -1380,16 +2241,18 @@ def _artist_entries(source):
 
 
 # 画师库（WeiLin 导出 md）：@画师名 + 中文备注。ComfyUI 没用过的画师也从这里占位。
-ARTIST_LIB_FILE = os.environ.get("GALLERY4_WEILIN_FILE", "") or _data_file("WeiLin画师库-用户自定义.md")
+ARTIST_LIB_FILE = (os.environ.get("COMFINDER_WEILIN_FILE", "") or os.environ.get("GALLERY4_WEILIN_FILE", "")).strip() or _data_file("WeiLin画师库-用户自定义.md")
 ARTIST_NOTES_FILE = os.path.join(USERDATA, "artist_notes.json")
 
 # Danbooru 收录数轻量映射（画师名 → post_count，供画师模块显示；独立小文件不触发画师库全量加载）
 ARTLIB_POSTS_FILE = _data_file("danbooru_posts.json")
 _db_posts_cache = None
+_db_posts_mtime = 0.0
 
 # 画师风格定性（逐位查证结果；轻量独立文件，画师模块与画师库共用）
 ARTLIB_STYLE_FILE = _data_file("artlib_style.jsonl")
 _style_cache = None
+_style_mtime = 0.0
 
 
 def _name_keys(name):
@@ -1437,10 +2300,14 @@ def _norm_sources(sources, name):
 
 def artist_styles():
     """{归一化键: {style, strength, features, bio, sources, checked_at, confidence}}
-    来自 data/artlib_style.jsonl（逐位查证结果，增量可回滚）；模块级缓存，文件缺失则为空。"""
-    global _style_cache
+    来自 data/artlib_style.jsonl（逐位查证结果，增量可回滚）；模块级缓存，文件更新時自動再読込。"""
+    global _style_cache, _style_mtime
     _refresh_artlib_paths()
-    if _style_cache is None:
+    try:
+        mt = os.path.getmtime(ARTLIB_STYLE_FILE) if ARTLIB_STYLE_FILE and os.path.isfile(ARTLIB_STYLE_FILE) else 0.0
+    except Exception:
+        mt = 0.0
+    if _style_cache is None or (mt and mt != _style_mtime):
         d = {}
         try:
             with open(ARTLIB_STYLE_FILE, encoding="utf-8") as f:
@@ -1469,19 +2336,25 @@ def artist_styles():
         except Exception:
             d = {}
         _style_cache = d
+        _style_mtime = mt
     return _style_cache
 
 
 def db_post_counts():
-    """画师名(小写) → Danbooru 收录作品数（模块级缓存，只读一次）。"""
-    global _db_posts_cache
+    """画师名(小写) → Danbooru 收录作品数（ファイル更新時自動再読込）。"""
+    global _db_posts_cache, _db_posts_mtime
     _refresh_artlib_paths()
-    if _db_posts_cache is None:
+    try:
+        mt = os.path.getmtime(ARTLIB_POSTS_FILE) if ARTLIB_POSTS_FILE and os.path.isfile(ARTLIB_POSTS_FILE) else 0.0
+    except Exception:
+        mt = 0.0
+    if _db_posts_cache is None or (mt and mt != _db_posts_mtime):
         try:
             with open(ARTLIB_POSTS_FILE, encoding="utf-8") as f:
                 _db_posts_cache = json.load(f)
         except Exception:
             _db_posts_cache = {}
+        _db_posts_mtime = mt
     return _db_posts_cache
 
 
@@ -1770,12 +2643,14 @@ def folder_images(name, source=""):
         entries, ready = get_index(src)
         if ready:
             by_source[src] = {e.get("file"): e for e in entries}
+    rmap = load_ratings()
+    tmap = load_trashed()
     out = []
     for it in items:
         src = it.get("source", "comfyui")
         e = by_source.get(src, {}).get(it.get("file"))
-        if e:
-            entry = {k: e.get(k) for k in ("file", "mtime", "size", "positive", "negative", "model", "params")}
+        if e and _rating_key(src, e.get("file")) not in tmap:
+            entry = _format_item(src, e, rmap, tmap)
             entry["source"] = src
             out.append(entry)
     if source:
@@ -1954,7 +2829,7 @@ def _refresh_artlib_paths():
     ARTLIB_SPECIALTY_FILE = _data_file("artlib_specialty.jsonl")
     ARTLIB_POSTS_FILE = _data_file("danbooru_posts.json")
     ARTLIB_STYLE_FILE = _data_file("artlib_style.jsonl")
-    if not os.environ.get("GALLERY4_WEILIN_FILE", "").strip():
+    if not (os.environ.get("COMFINDER_WEILIN_FILE", "") or os.environ.get("GALLERY4_WEILIN_FILE", "")).strip():
         ARTIST_LIB_FILE = _data_file("WeiLin画师库-用户自定义.md")
 _artlib = {"loaded": False, "artists": [], "by_id": {}, "cls": {}, "spec": {}}  # 懒加载缓存
 
@@ -2091,10 +2966,12 @@ def artlib_release():
 
     也清掉风格/收录数缓存 —— 下载安装完数据后会调本函数，不清的话新数据读不进来。
     """
-    global _style_cache, _db_posts_cache
+    global _style_cache, _db_posts_cache, _style_mtime, _db_posts_mtime
     _artlib.update({"loaded": False, "artists": [], "by_id": {}, "cls": {}, "spec": {}})
     _style_cache = None
     _db_posts_cache = None
+    _style_mtime = 0.0
+    _db_posts_mtime = 0.0
     _ARTLIB_STAMP["t"] = 0.0
     return {"ok": True, "released": True}
 
@@ -2111,12 +2988,12 @@ ARTLIB_STATE = {"busy": False, "phase": "", "got": 0, "total": 0,
 
 
 def artlib_url():
-    return os.environ.get("GALLERY4_ARTLIB_URL", "").strip() or ARTLIB_DEFAULT_URL
+    return (os.environ.get("COMFINDER_ARTLIB_URL", "") or os.environ.get("GALLERY4_ARTLIB_URL", "")).strip() or ARTLIB_DEFAULT_URL
 
 
 def artlib_dir():
-    """数据落地目录：GALLERY4_DATA_DIR 优先，否则插件目录 data/。"""
-    env_dir = os.environ.get("GALLERY4_DATA_DIR", "").strip()
+    """データ配置ディレクトリ：COMFINDER_DATA_DIR（互換: GALLERY4_DATA_DIR）優先。"""
+    env_dir = (os.environ.get("COMFINDER_DATA_DIR", "") or os.environ.get("GALLERY4_DATA_DIR", "")).strip()
     return env_dir if env_dir else DATA_DIR
 
 
@@ -2152,7 +3029,7 @@ def _artlib_install_worker(url):
         dest = artlib_dir()
         os.makedirs(dest, exist_ok=True)
         zp = os.path.join(dest, ".artists-data.zip.part")
-        req = urllib.request.Request(url, headers={"User-Agent": "Gallery4ComfyUI"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Comfinder"})
         with urllib.request.urlopen(req, timeout=60) as r, open(zp, "wb") as f:
             ARTLIB_STATE["total"] = int(r.headers.get("Content-Length") or 0)
             while True:
@@ -2295,3 +3172,362 @@ def _artlib_ensure():
     except Exception:
         pass
     _artlib.update({"loaded": True, "artists": artists, "by_id": by_id, "cls": cls, "spec": spec})
+
+
+# ---------------------------------------------------------------------------
+# Danbooru 絵師情報・タグ 自動 CRON 同期（バックグラウンド）
+# ---------------------------------------------------------------------------
+DANBOORU_CRON_FILE = os.path.join(USERDATA, "danbooru_cron.json")
+DANBOORU_BASE = "https://danbooru.donmai.us"
+DANBOORU_MIN_ARTIST_POSTS = 50
+DANBOORU_MIN_TAG_POSTS = 200
+DANBOORU_TAG_MAX_PAGES = 30
+_cron_lock = threading.Lock()
+_cron_thread = None
+_cron_running = False
+_cron_wake = threading.Event()
+_danbooru_tags_cache = None
+_danbooru_tags_mtime = 0.0
+
+
+def _danbooru_interval():
+    try:
+        return float(os.environ.get("COMFINDER_DANBOORU_INTERVAL", "86400") or 86400)
+    except Exception:
+        return 86400.0
+
+
+def _artlib_release_interval():
+    try:
+        return float(os.environ.get("COMFINDER_ARTLIB_CHECK_INTERVAL", "604800") or 604800)
+    except Exception:
+        return 604800.0
+
+
+def _load_cron_state():
+    try:
+        with open(DANBOORU_CRON_FILE, encoding="utf-8") as f:
+            d = json.load(f)
+        if isinstance(d, dict):
+            return d
+    except Exception:
+        pass
+    return {}
+
+
+def _save_cron_state(st):
+    try:
+        os.makedirs(USERDATA, exist_ok=True)
+        tmp = DANBOORU_CRON_FILE + ".part"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(st, f, ensure_ascii=False, indent=1)
+        os.replace(tmp, DANBOORU_CRON_FILE)
+    except Exception:
+        pass
+
+
+def _db_http_get_json(url, timeout=30):
+    import urllib.request, urllib.error
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Comfinder-cron/2.0",
+        "Accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def _db_fetch_paged_tags(category=None, min_posts=50, max_pages=200):
+    import urllib.parse, urllib.error
+    rows = []
+    interval = 0.42
+    page = 1
+    while page <= max_pages:
+        qs = {"search[order]": "count", "limit": 1000, "page": page}
+        if category is not None:
+            qs["search[category]"] = category
+        url = DANBOORU_BASE + "/tags.json?" + urllib.parse.urlencode(qs)
+        data = None
+        for attempt in range(5):
+            time.sleep(interval)
+            try:
+                data = _db_http_get_json(url, timeout=30)
+                interval = max(0.38, interval * 0.9)
+                break
+            except urllib.error.HTTPError as e:
+                if e.code in (429, 502, 503, 504, 520, 521, 522):
+                    interval = min(2.0, interval * 1.6)
+                    time.sleep(min(2.0 * (attempt + 1), 20.0))
+                    continue
+                raise
+            except Exception:
+                time.sleep(min(2.0 ** attempt, 15.0))
+        if not data:
+            break
+        stop = False
+        for t in data:
+            pc = int(t.get("post_count") or 0)
+            if pc < min_posts:
+                stop = True
+                continue
+            rows.append({
+                "id": t.get("id"),
+                "name": t.get("name") or "",
+                "post_count": pc,
+                "category": t.get("category"),
+                "is_deprecated": bool(t.get("is_deprecated", False)),
+                "created_at": t.get("created_at"),
+                "updated_at": t.get("updated_at"),
+            })
+        if stop or len(data) < 1000:
+            break
+        page += 1
+    return rows
+
+
+def _sync_artlib_release_if_needed(st, force=False):
+    import urllib.request
+    dest = artlib_dir()
+    missing_style = any(
+        not os.path.isfile(os.path.join(dest, n))
+        for n in ("artlib_style.jsonl", "artlib_specialty.jsonl",
+                  "sample_artists_classified.csv", "toppost_artists_classified.csv")
+    )
+    now = time.time()
+    rel_iv = _artlib_release_interval()
+    last_chk = float(st.get("last_release_check") or 0.0)
+    if not force and not missing_style and (rel_iv <= 0 or now - last_chk < rel_iv):
+        return False
+    url = artlib_url()
+    if not url:
+        return False
+    try:
+        req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "Comfinder-cron/2.0"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            etag = (r.headers.get("ETag") or r.headers.get("Last-Modified") or "").strip()
+        st["last_release_check"] = time.time()
+        if not missing_style and etag and etag == st.get("release_etag"):
+            _save_cron_state(st)
+            return False
+        if missing_style or (etag and etag != st.get("release_etag")):
+            if not ARTLIB_STATE.get("busy"):
+                _artlib_install_worker(url)
+                if etag:
+                    st["release_etag"] = etag
+                _save_cron_state(st)
+                return True
+    except Exception:
+        st["last_release_check"] = time.time()
+        _save_cron_state(st)
+    return False
+
+
+def _sync_danbooru_artists():
+    dest = artlib_dir()
+    os.makedirs(dest, exist_ok=True)
+    rows = _db_fetch_paged_tags(category=1, min_posts=DANBOORU_MIN_ARTIST_POSTS, max_pages=200)
+    if not rows:
+        return 0
+    # 既存の artists.jsonl から取得漏れがあればマージして保持
+    seen = {r["name"] for r in rows if r.get("name")}
+    artists_fp = os.path.join(dest, "artists.jsonl")
+    if os.path.isfile(artists_fp):
+        try:
+            with open(artists_fp, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        o = json.loads(line)
+                        nm = o.get("name") or ""
+                        if nm and nm not in seen and int(o.get("post_count") or 0) >= DANBOORU_MIN_ARTIST_POSTS:
+                            rows.append(o)
+                            seen.add(nm)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+    rows.sort(key=lambda x: -(int(x.get("post_count") or 0)))
+    tmp_a = artists_fp + ".part"
+    with open(tmp_a, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    os.replace(tmp_a, artists_fp)
+
+    posts_map = {str(r["name"]).lower(): int(r.get("post_count") or 0) for r in rows if r.get("name")}
+    posts_fp = os.path.join(dest, "danbooru_posts.json")
+    tmp_p = posts_fp + ".part"
+    with open(tmp_p, "w", encoding="utf-8") as f:
+        json.dump(posts_map, f, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp_p, posts_fp)
+
+    global _db_posts_cache, _db_posts_mtime
+    _db_posts_cache = None
+    _db_posts_mtime = 0.0
+    _artist_cache.clear()
+    if _artlib.get("loaded"):
+        artlib_release()
+    return len(rows)
+
+
+def _sync_danbooru_tags():
+    dest = artlib_dir()
+    os.makedirs(dest, exist_ok=True)
+    rows = _db_fetch_paged_tags(category=None, min_posts=DANBOORU_MIN_TAG_POSTS, max_pages=DANBOORU_TAG_MAX_PAGES)
+    if not rows:
+        return 0
+    tags_fp = os.path.join(dest, "danbooru_tags.jsonl")
+    tmp_t = tags_fp + ".part"
+    with open(tmp_t, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    os.replace(tmp_t, tags_fp)
+    global _danbooru_tags_cache, _danbooru_tags_mtime
+    _danbooru_tags_cache = None
+    _danbooru_tags_mtime = 0.0
+    return len(rows)
+
+
+def danbooru_tags_search(search="", limit=50):
+    global _danbooru_tags_cache, _danbooru_tags_mtime
+    _refresh_artlib_paths()
+    fp = _data_file("danbooru_tags.jsonl")
+    if not fp:
+        return []
+    try:
+        mt = os.path.getmtime(fp)
+    except Exception:
+        mt = 0.0
+    if _danbooru_tags_cache is None or (mt and mt != _danbooru_tags_mtime):
+        items = []
+        try:
+            with open(fp, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        o = json.loads(line)
+                        items.append({
+                            "tag": o.get("name") or "",
+                            "count": int(o.get("post_count") or 0),
+                            "category": o.get("category"),
+                        })
+                    except Exception:
+                        pass
+        except Exception:
+            items = []
+        _danbooru_tags_cache = items
+        _danbooru_tags_mtime = mt
+    q = (search or "").strip().lower().replace(" ", "_")
+    if not q:
+        return _danbooru_tags_cache[:limit]
+    res = [x for x in _danbooru_tags_cache if q in x["tag"].lower()]
+    return res[:limit]
+
+
+def run_danbooru_sync_once(force=False):
+    global _cron_running
+    with _cron_lock:
+        if _cron_running:
+            return {"ok": False, "busy": True}
+        _cron_running = True
+    try:
+        st = _load_cron_state()
+        now = time.time()
+        iv = _danbooru_interval()
+        dest = artlib_dir()
+        artists_fp = os.path.join(dest, "artists.jsonl")
+        tags_fp = os.path.join(dest, "danbooru_tags.jsonl")
+
+        # 初回ファイル時刻も参照して無駄な再取得を避ける
+        last_a = float(st.get("last_artists_sync") or 0.0)
+        if not last_a and os.path.isfile(artists_fp):
+            try:
+                last_a = os.path.getmtime(artists_fp)
+            except Exception:
+                pass
+        last_t = float(st.get("last_tags_sync") or 0.0)
+        if not last_t and os.path.isfile(tags_fp):
+            try:
+                last_t = os.path.getmtime(tags_fp)
+            except Exception:
+                pass
+
+        did = False
+        _sync_artlib_release_if_needed(st, force=force)
+
+        if force or not os.path.isfile(artists_fp) or (now - last_a >= iv):
+            try:
+                n_art = _sync_danbooru_artists()
+                if n_art:
+                    st["last_artists_sync"] = time.time()
+                    st["artists_count"] = n_art
+                    st["last_error"] = ""
+                    did = True
+            except Exception as e:
+                st["last_error"] = "artists: %s" % e
+            _save_cron_state(st)
+
+        if force or not os.path.isfile(tags_fp) or (now - last_t >= iv):
+            try:
+                n_tag = _sync_danbooru_tags()
+                if n_tag:
+                    st["last_tags_sync"] = time.time()
+                    st["tags_count"] = n_tag
+                    st["last_error"] = ""
+                    did = True
+            except Exception as e:
+                st["last_error"] = "tags: %s" % e
+            _save_cron_state(st)
+
+        return {"ok": True, "synced": did, "state": st}
+    finally:
+        with _cron_lock:
+            _cron_running = False
+
+
+def _danbooru_cron_loop():
+    # 起動直後のギャラリー走査・サムネイル生成と競合しないよう少し待機
+    _cron_wake.wait(15.0)
+    while True:
+        _cron_wake.clear()
+        iv = _danbooru_interval()
+        if iv <= 0:
+            _cron_wake.wait(3600.0)
+            continue
+        try:
+            run_danbooru_sync_once(force=False)
+        except Exception:
+            pass
+        # 1時間ごとに期限チェック（スリープ復帰にも強い）
+        _cron_wake.wait(min(3600.0, max(60.0, iv)))
+
+
+def ensure_danbooru_cron():
+    global _cron_thread
+    if _danbooru_interval() <= 0:
+        return
+    with _cron_lock:
+        if _cron_thread is None or not _cron_thread.is_alive():
+            _cron_thread = threading.Thread(target=_danbooru_cron_loop, daemon=True)
+            _cron_thread.start()
+
+
+def danbooru_cron_status():
+    st = _load_cron_state()
+    return {
+        "ok": True,
+        "running": bool(_cron_running),
+        "interval_sec": _danbooru_interval(),
+        "state": st,
+    }
+
+
+def trigger_danbooru_sync(force=True):
+    ensure_danbooru_cron()
+    if force:
+        threading.Thread(target=run_danbooru_sync_once, args=(True,), daemon=True).start()
+        return {"ok": True, "started": True}
+    _cron_wake.set()
+    return {"ok": True, "woken": True}
