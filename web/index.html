@@ -158,6 +158,9 @@
   .gen-fav-row{display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 4px}
   .gfav-chip{border:1px solid var(--line); background: var(--bg); color: var(--txt); border-radius:999px; padding:4px 10px; font-size:12.5px; cursor:pointer}
   .gen-fav-empty{font-size:12px; color: var(--dim)}
+  .gtpl-group{display:flex; flex-wrap:wrap; gap:6px; align-items:center; width:100%}
+  .gtpl-cat{font-size:11px; color: var(--dim); min-width:52px}
+  .gen-cat-sel{width:auto; margin:0 6px 0 0}
 
   .tb-util{margin-left: auto; display: flex; align-items: center; gap: 6px}
   .iconbtn{
@@ -1364,7 +1367,7 @@
         <div id="genFavArtists" class="gen-fav-row"><span class="gen-fav-empty" data-i18n="genFavEmpty">（作家一覧で★を付けるとここに出ます）</span></div>
         <span class="gen-lbl" data-i18n="genTplTitle">タグテンプレート</span>
         <div id="genTplRow" class="gen-fav-row"><span class="gen-fav-empty" data-i18n="genTplEmpty">（未登録）</span></div>
-        <div class="gen-row-end"><button class="iconbtn" id="genTplAdd" type="button" data-i18n="genTplAdd">現在のPositiveをテンプレート登録</button></div>
+        <div class="gen-row-end"><select id="genTplCat" class="gen-input gen-cat-sel"><option value="artist">アーティスト</option><option value="quality">品質</option><option value="character">キャラ</option><option value="common" selected>定型</option><option value="other">その他</option></select><button class="iconbtn" id="genTplAdd" type="button" data-i18n="genTplAdd">現在のPositiveをテンプレート登録</button></div>
         <div id="genTplList"></div>
         <label class="gen-lbl" data-i18n="genNegative">Negative</label>
         <textarea id="genNeg" class="gen-text" rows="3"></textarea>
@@ -1682,6 +1685,13 @@
       <span id="trashInfo" style="flex:1; font-size:12.5px; color:var(--dim)"></span>
       <button class="iconbtn" id="btnTrashEmpty" data-i18n="trashEmpty">ゴミ箱を空にする</button>
     </div>
+    <div class="row" style="flex-wrap:wrap; gap:6px; align-items:center">
+      <label data-i18n="backupLabel" style="flex:0 0 auto; font-size:12.5px; color:var(--dim)">バックアップ</label>
+      <span style="flex:1; font-size:12.5px; color:var(--dim)" data-i18n="backupNote">設定・ライブラリ・評価など</span>
+      <button class="iconbtn" id="btnBackupExport" data-i18n="backupExport">書き出し</button>
+      <button class="iconbtn" id="btnBackupImport" data-i18n="backupImport">読み込み</button>
+      <input type="file" id="backupFile" accept=".json,application/json" hidden>
+    </div>
     <div class="msg" id="setupMsg"></div>
   </div>
 </div>
@@ -1786,7 +1796,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", genProgRunning: "生成中…", genProgDone: "完了", genProgError: "エラー", genFavArtists: "お気に入り作家", genFavEmpty: "（作家一覧で★を付けるとここに出ます）", genFavDup: "既に入っています", genTplTitle: "タグテンプレート", genTplEmpty: "（未登録）", genTplAdd: "現在のPositiveをテンプレート登録", genTplAllDup: "全部すでにあります", genTplInserted: "{n}件挿入しました", genTplNeedTags: "Positiveが空です", genTplNamePrompt: "テンプレート名", genTplDeleteConfirm: "このテンプレートを削除しますか？", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", genProgRunning: "生成中…", genProgDone: "完了", genProgError: "エラー", genFavArtists: "お気に入り作家", genFavEmpty: "（作家一覧で★を付けるとここに出ます）", genFavDup: "既に入っています", genTplTitle: "タグテンプレート", genTplEmpty: "（未登録）", genTplAdd: "現在のPositiveをテンプレート登録", genTplAllDup: "全部すでにあります", genTplInserted: "{n}件挿入しました", genTplNeedTags: "Positiveが空です", genTplNamePrompt: "テンプレート名", genTplDeleteConfirm: "このテンプレートを削除しますか？", backupLabel: "バックアップ", backupNote: "設定・ライブラリ・評価など", backupExport: "書き出し", backupImport: "読み込み", backupImportConfirm: "現在の設定を上書きします。読み込みますか？（復元前の状態は自動でスナップショット保存されます）", backupRestored: "{n}項目を復元しました", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1897,7 +1907,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", genProgRunning: "Generating...", genProgDone: "Done", genProgError: "Error", genFavArtists: "Favorite artists", genFavEmpty: "(Star artists in the Artists tab to see them here)", genFavDup: "Already in the prompt", genTplTitle: "Tag templates", genTplEmpty: "(None yet)", genTplAdd: "Register current Positive as template", genTplAllDup: "All tags already present", genTplInserted: "Inserted {n} tag(s)", genTplNeedTags: "Positive is empty", genTplNamePrompt: "Template name", genTplDeleteConfirm: "Delete this template?", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", genProgRunning: "Generating...", genProgDone: "Done", genProgError: "Error", genFavArtists: "Favorite artists", genFavEmpty: "(Star artists in the Artists tab to see them here)", genFavDup: "Already in the prompt", genTplTitle: "Tag templates", genTplEmpty: "(None yet)", genTplAdd: "Register current Positive as template", genTplAllDup: "All tags already present", genTplInserted: "Inserted {n} tag(s)", genTplNeedTags: "Positive is empty", genTplNamePrompt: "Template name", genTplDeleteConfirm: "Delete this template?", backupLabel: "Backup", backupNote: "Settings, library, ratings, etc.", backupExport: "Export", backupImport: "Import", backupImportConfirm: "Overwrite current settings with this backup? (A snapshot of the current state is saved first)", backupRestored: "Restored {n} section(s)", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2273,6 +2283,17 @@ async function genQueueRefresh(){
 function genQueueRender(r){
   const run = r.running || [], pen = r.pending || [];
   if($("genQueueCount")) $("genQueueCount").textContent = t("genRunning") + " " + run.length + " · " + t("genPending") + " " + pen.length;
+  if(GEN_PROG.active && GEN_PROG.promptId){
+    const still = run.some(x=>x.prompt_id === GEN_PROG.promptId) || pen.some(x=>x.prompt_id === GEN_PROG.promptId);
+    if(!still){
+      GEN_PROG.active = false;
+      const fill = $("genProgFill");
+      if(fill) fill.style.width = "100%";
+      if($("genProgLabel")) $("genProgLabel").textContent = t("genProgDone");
+      if($("genProgStep")) $("genProgStep").textContent = "";
+      setTimeout(()=>{ if(!GEN_PROG.active){ const box = $("genProgress"); if(box) box.hidden = true; const img = $("genProgImg"); if(img) img.style.display = "none"; } }, 2500);
+    }
+  }
   const pendIds = new Set(pen.map(x=>x.prompt_id));
   [...GEN_Q_SEL].forEach(id=>{ if(!pendIds.has(id)) GEN_Q_SEL.delete(id); });
   if($("genDelSel")) $("genDelSel").hidden = GEN_Q_SEL.size === 0;
@@ -2341,8 +2362,43 @@ async function genQueueShuffleUndo(){
   genQueueRefresh();
 }
 
+// ---------- Settings: backup / restore ----------
+if($("btnBackupExport")) $("btnBackupExport").onclick = async ()=>{
+  try{
+    const r = await api("/api/settings/export");
+    const blob = new Blob([JSON.stringify(r, null, 1)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "comfinder-backup-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }catch(e){ alert(String((e && e.message) || e)); }
+};
+if($("btnBackupImport")) $("btnBackupImport").onclick = ()=>{ const f = $("backupFile"); if(f) f.click(); };
+if($("backupFile")) $("backupFile").addEventListener("change", async (ev)=>{
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if(!file) return;
+  if(!confirm(t("backupImportConfirm"))) return;
+  try{
+    const text = await file.text();
+    const bundle = JSON.parse(text);
+    const r = await api("/api/settings/import", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(bundle)});
+    if(r && r.ok){
+      showToast(t("backupRestored").replace("{n}", String((r.restored || []).length)));
+      setTimeout(()=>location.reload(), 800);
+    }else{
+      alert((r && r.error) || "error");
+    }
+  }catch(e){ alert(String((e && e.message) || e)); }
+});
+
 // ---------- Generate: tag templates ----------
 let GEN_TPLS = [];
+const GEN_TPL_CATS = [{id: "artist", ja: "アーティスト", en: "Artists"}, {id: "quality", ja: "品質", en: "Quality"}, {id: "character", ja: "キャラ", en: "Characters"}, {id: "common", ja: "定型", en: "Boilerplate"}, {id: "other", ja: "その他", en: "Other"}];
 let GEN_TPL_MODE = "cursor";
 async function genTplLoad(){
   try{
@@ -2358,7 +2414,11 @@ function genTplRender(){
     if(!GEN_TPLS.length){
       row.innerHTML = '<span class="gen-fav-empty">' + esc(t("genTplEmpty")) + '</span>';
     }else{
-      row.innerHTML = GEN_TPLS.map(x=>'<button class="gfav-chip" data-tpl="' + x.id + '" type="button">' + esc(x.name) + '</button>').join("");
+      row.innerHTML = GEN_TPL_CATS.map(c=>{
+        const xs = GEN_TPLS.filter(x=>(x.category || "other") === c.id);
+        if(!xs.length) return "";
+        return '<div class="gtpl-group"><span class="gtpl-cat">' + esc(LANG === "ja" ? c.ja : c.en) + '</span>' + xs.map(x=>'<button class="gfav-chip" data-tpl="' + x.id + '" type="button">' + esc(x.name) + '</button>').join("") + '</div>';
+      }).join("");
       row.querySelectorAll(".gfav-chip").forEach(b=>{ b.onclick = ()=>genTplInsert(b.dataset.tpl); });
     }
   }
@@ -2403,7 +2463,7 @@ async function genTplAdd(){
   const name = window.prompt(t("genTplNamePrompt"), "");
   if(!name) return;
   try{
-    const r = await api("/api/tag-templates/save", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: name.trim(), tags})});
+    const r = await api("/api/tag-templates/save", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: name.trim(), tags, category: ($("genTplCat") && $("genTplCat").value) || "other"})});
     if(r && r.ok) genTplLoad();
     else if(r && r.error) alert(r.error);
   }catch(e){ console.warn("tpl save failed", e); }
@@ -2468,7 +2528,7 @@ function genFavInsert(name){
 // ---------- Generate: live progress via ComfyUI /ws ----------
 let GEN_WS = null;
 let GEN_WS_ID = null;
-let GEN_PROG = {active: false, value: 0, max: 0};
+let GEN_PROG = {active: false, value: 0, max: 0, promptId: null};
 let GEN_PROG_URL = null;
 function genWsConnect(){
   if(GEN_WS && (GEN_WS.readyState === 0 || GEN_WS.readyState === 1)) return;
@@ -2501,7 +2561,7 @@ function genWsShow(){
 function genWsEvent(m){
   const d = m.data || {};
   if(m.type === "execution_start"){
-    GEN_PROG = {active: true, value: 0, max: 0};
+    GEN_PROG = {active: true, value: 0, max: 0, promptId: (d && d.prompt_id) || null};
     genWsShow();
     if($("genProgLabel")) $("genProgLabel").textContent = t("genProgRunning");
     if($("genProgStep")) $("genProgStep").textContent = "";
@@ -2511,6 +2571,8 @@ function genWsEvent(m){
     if(img){ img.style.display = "none"; img.removeAttribute("src"); }
     genProgLabelFromQueue();
   }else if(m.type === "progress"){
+    GEN_PROG.active = true;
+    if(d.prompt_id) GEN_PROG.promptId = d.prompt_id;
     GEN_PROG.value = d.value || 0;
     GEN_PROG.max = d.max || 0;
     const fill = $("genProgFill");
