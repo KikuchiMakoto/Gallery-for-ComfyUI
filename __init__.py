@@ -5,7 +5,7 @@ Comfinder —— ComfyUI カスタムノード・高速スワイプ＆ギャラ�
 - ComfyUI キャンバスに「Comfinder」ノードを追加 → 「Comfinder を開く」ボタン → 新規タブで開く
 - スワイプ仕分け（未評価 / ★1〜3 / ゴミ箱）とギャラリー検索・閲覧を ComfyUI プロセス内で提供
 """
-import os, json, threading, zipfile, datetime, asyncio, time, tempfile, re, heapq
+import os, json, threading, zipfile, datetime, asyncio, time, tempfile, re, heapq, random
 
 from server import PromptServer
 from aiohttp import web
@@ -283,7 +283,7 @@ async def api_queue(request):
         with q.mutex:
             pending = [_queue_item_view(it) for it in sorted(q.queue, key=lambda x: x[0])]
             running = [_queue_item_view(it) for it in q.currently_running.values()]
-        return _json({"ok": True, "running": running, "pending": pending})
+        return _json({"ok": True, "running": running, "pending": pending, "shuffle_undo_available": _QUEUE_UNDO["map"] is not None})
     except Exception as e:
         return _json({"ok": False, "error": str(e)})
 
@@ -318,6 +318,61 @@ async def api_queue_front(request):
         heapq.heapify(q.queue)
     PromptServer.instance.queue_updated()
     return _json({"ok": True, "number": new_num})
+
+_QUEUE_UNDO = {"map": None}
+
+
+def _queue_validate(items):
+    for it in items:
+        if not (isinstance(it, (list, tuple)) and len(it) >= 2
+                and isinstance(it[0], (int, float)) and isinstance(it[1], str)):
+            return False
+    return True
+
+
+@PromptServer.instance.routes.post(P + "/api/queue/shuffle")
+async def api_queue_shuffle(request):
+    q = PromptServer.instance.prompt_queue
+    with q.mutex:
+        if not _queue_validate(q.queue):
+            return _json({"ok": False, "error": "unexpected queue item shape"}, 400)
+        if len(q.queue) < 2:
+            return _json({"ok": True, "count": len(q.queue), "note": "nothing to shuffle"})
+        ordered = sorted(q.queue, key=lambda x: x[0])
+        _QUEUE_UNDO["map"] = {it[1]: it[0] for it in ordered}
+        numbers = [it[0] for it in ordered]
+        items = list(ordered)
+        random.shuffle(items)
+        newq = [(num,) + tuple(it[1:]) for num, it in zip(numbers, items)]
+        q.queue[:] = newq
+        heapq.heapify(q.queue)
+    PromptServer.instance.queue_updated()
+    return _json({"ok": True, "count": len(newq)})
+
+
+@PromptServer.instance.routes.post(P + "/api/queue/shuffle/undo")
+async def api_queue_shuffle_undo(request):
+    q = PromptServer.instance.prompt_queue
+    with q.mutex:
+        snap = _QUEUE_UNDO.get("map")
+        if not snap:
+            return _json({"ok": False, "error": "no shuffle to undo"}, 400)
+        if not _queue_validate(q.queue):
+            return _json({"ok": False, "error": "unexpected queue item shape"}, 400)
+        restored = 0
+        newq = []
+        for it in q.queue:
+            if it[1] in snap:
+                newq.append((snap[it[1]],) + tuple(it[1:]))
+                restored += 1
+            else:
+                newq.append(it)
+        q.queue[:] = newq
+        heapq.heapify(q.queue)
+        _QUEUE_UNDO["map"] = None
+    PromptServer.instance.queue_updated()
+    return _json({"ok": True, "restored": restored})
+
 
 
 @PromptServer.instance.routes.get(P + "/api/scan")

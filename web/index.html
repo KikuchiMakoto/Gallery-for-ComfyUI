@@ -1327,6 +1327,8 @@
           <span class="gen-count" id="genQueueCount"></span>
           <span class="spacer"></span>
           <button class="iconbtn" id="genDelSel" type="button" data-i18n="genDeleteSel" hidden>選択を削除</button>
+          <button class="iconbtn" id="genShuffle" type="button" data-i18n="genShuffle">シャッフル</button>
+          <button class="iconbtn" id="genShuffleUndo" type="button" data-i18n="genShuffleUndo" hidden>元に戻す</button>
           <button class="iconbtn" id="genRefresh" type="button" data-i18n="genRefresh">更新</button>
           <button class="iconbtn" id="genClear" type="button" data-i18n="genClearAll">全消去</button>
         </div>
@@ -1714,7 +1716,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1825,7 +1827,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2174,6 +2176,7 @@ function setMode(m){
 }
 // ---------- Generate: queue panel ----------
 let GEN_Q_TIMER = null;
+let GEN_Q_PENDING = 0;
 const GEN_Q_SEL = new Set();
 function genOnShow(){
   genQueueRefresh();
@@ -2198,6 +2201,8 @@ function genQueueRender(r){
   const pendIds = new Set(pen.map(x=>x.prompt_id));
   [...GEN_Q_SEL].forEach(id=>{ if(!pendIds.has(id)) GEN_Q_SEL.delete(id); });
   if($("genDelSel")) $("genDelSel").hidden = GEN_Q_SEL.size === 0;
+  if($("genShuffleUndo")) $("genShuffleUndo").hidden = !r.shuffle_undo_available;
+  GEN_Q_PENDING = pen.length;
   let h = "";
   run.forEach(it=>{
     h += '<div class="gq-row run"><span class="gq-badge">' + esc(t("genRunning")) + '</span><span class="gq-pos">' + esc(it.positive || String(it.prompt_id).slice(0, 8)) + '</span><button class="iconbtn gq-int" type="button">' + esc(t("genInterrupt")) + '</button></div>';
@@ -2244,6 +2249,22 @@ async function genQueueInterrupt(){
 if($("genRefresh")) $("genRefresh").onclick = ()=>genQueueRefresh();
 if($("genClear")) $("genClear").onclick = ()=>genQueueClear();
 if($("genDelSel")) $("genDelSel").onclick = ()=>genQueueDelete([...GEN_Q_SEL]);
+if($("genShuffle")) $("genShuffle").onclick = ()=>genQueueShuffle();
+if($("genShuffleUndo")) $("genShuffleUndo").onclick = ()=>genQueueShuffleUndo();
+async function genQueueShuffle(){
+  if(GEN_Q_PENDING < 2) return;
+  if(!confirm(t("genShuffleConfirm").replace("{n}", String(GEN_Q_PENDING)))) return;
+  try{
+    await api("/api/queue/shuffle", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+  }catch(e){ console.warn("queue shuffle failed", e); }
+  genQueueRefresh();
+}
+async function genQueueShuffleUndo(){
+  try{
+    await api("/api/queue/shuffle/undo", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+  }catch(e){ console.warn("queue shuffle undo failed", e); }
+  genQueueRefresh();
+}
 
 function setGalDrawerOpen(open){
   const dr = $("galDrawer"), btn = $("btnGalMenu");
