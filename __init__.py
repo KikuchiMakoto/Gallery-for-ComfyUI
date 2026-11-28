@@ -390,6 +390,26 @@ async def _submit_prompt(graph, front=False):
     return {"ok": True, "prompt_id": prompt_id, "number": number}
 
 
+@PromptServer.instance.routes.get(P + "/api/settings/export")
+async def api_settings_export(request):
+    try:
+        return _json(G.export_bundle())
+    except Exception as e:
+        return _json({"error": str(e)}, 500)
+
+
+@PromptServer.instance.routes.post(P + "/api/settings/import")
+async def api_settings_import(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = None
+    try:
+        return _json(G.import_bundle(data))
+    except Exception as e:
+        return _json({"ok": False, "error": str(e)})
+
+
 @PromptServer.instance.routes.get(P + "/api/tag-templates")
 async def api_tag_templates(request):
     try:

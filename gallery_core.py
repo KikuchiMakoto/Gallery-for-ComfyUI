@@ -1302,7 +1302,10 @@ def tag_template_save(entry):
         if rec is None:
             rec = {"id": "t%d" % int(time.time() * 1000), "created_at": now}
             lst.append(rec)
-        rec.update({"name": name, "tags": tags, "updated_at": now})
+        cat = entry.get("category")
+        if cat not in ("artist", "quality", "character", "common", "other"):
+            cat = rec.get("category") or "other"
+        rec.update({"name": name, "tags": tags, "category": cat, "updated_at": now})
         _save_tag_templates_unlocked(lst)
         _tag_templates_cache = [dict(it) for it in lst]
     return {"ok": True, "template": dict(rec)}
@@ -1318,6 +1321,63 @@ def tag_template_delete(tid):
         _save_tag_templates_unlocked(new)
         _tag_templates_cache = [dict(it) for it in new]
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Settings backup / restore (settings, prompts, tag templates, artist favs,
+# chains, ratings; index and thumbnails are excluded)
+# ---------------------------------------------------------------------------
+BACKUP_KIND = "comfinder-settings-backup"
+
+
+def _backup_targets():
+    return {"settings": SETTINGS_FILE, "prompts": PROMPTS_FILE,
+            "tag_templates": TAG_TEMPLATES_FILE, "artist_favs": ARTIST_FAVS_FILE,
+            "chains": CHAINS_FILE, "ratings": RATINGS_FILE}
+
+
+def _write_json_atomic(path, obj):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=1)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def export_bundle():
+    data = {}
+    for key, path in _backup_targets().items():
+        try:
+            with open(path, encoding="utf-8") as f:
+                data[key] = json.load(f)
+        except Exception:
+            data[key] = None
+    return {"app": "comfinder", "kind": BACKUP_KIND, "version": 1,
+            "exported_at": int(time.time()), "data": data}
+
+
+def import_bundle(bundle):
+    global _ratings_cache, _prompts_cache, _tag_templates_cache
+    if not isinstance(bundle, dict) or bundle.get("kind") != BACKUP_KIND:
+        return {"ok": False, "error": "Comfinderのバックアップファイルではありません"}
+    data = bundle.get("data")
+    if not isinstance(data, dict):
+        return {"ok": False, "error": "data missing"}
+    snap_dir = os.path.join(USERDATA, "backups")
+    os.makedirs(snap_dir, exist_ok=True)
+    snap_name = "snapshot-%d.json" % int(time.time())
+    _write_json_atomic(os.path.join(snap_dir, snap_name), export_bundle())
+    restored = []
+    for key, path in _backup_targets().items():
+        if key in data and data[key] is not None:
+            _write_json_atomic(path, data[key])
+            restored.append(key)
+    _ratings_cache = None
+    _prompts_cache = None
+    _tag_templates_cache = None
+    return {"ok": True, "restored": restored, "snapshot": snap_name}
 
 
 # ---------------------------------------------------------------------------
