@@ -121,6 +121,19 @@
   @keyframes cfblink{0%,100%{opacity:.85}50%{opacity:.2}}
   .live-pill.ws .live-dot{animation: cfblink 1.6s ease-in-out infinite}
   .gen-wrap{max-width:860px; margin:0 auto; padding:14px 12px 48px}
+  .gen-sec{background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding:12px; margin-bottom:14px}
+  .gen-sec-head{display:flex; align-items:center; gap:8px}
+  .gen-sec-head h3{margin:0; font-size:15px}
+  .gen-sec-head .spacer{flex:1}
+  .gen-count{color: var(--dim); font-size:12.5px}
+  .gen-note{color: var(--dim); font-size:11.5px; margin:6px 0 4px}
+  #genClear{color:#ff7b72}
+  .gq-row{display:flex; align-items:center; gap:8px; padding:7px 4px; border-top:1px solid var(--line)}
+  .gq-row.run{background: var(--accent-weak); border-radius:6px; border-top:none; margin-top:8px; padding:7px 8px}
+  .gq-badge{font-size:11px; font-weight:700; color: var(--accent); border:1px solid var(--accent); border-radius:999px; padding:1px 7px; flex:none}
+  .gq-num{color: var(--dim); font-size:12px; min-width:22px; text-align:right; flex:none}
+  .gq-pos{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px}
+  .gq-chk{flex:none; display:flex; align-items:center}
 
   .tb-util{margin-left: auto; display: flex; align-items: center; gap: 6px}
   .iconbtn{
@@ -1306,7 +1319,21 @@
 
   <!-- 生成ビュー -->
   <div id="genView" hidden>
-    <div class="gen-wrap" id="genWrap"></div>
+    <div class="gen-wrap" id="genWrap">
+      <div class="gen-sec" id="genProgress" hidden></div>
+      <div class="gen-sec">
+        <div class="gen-sec-head">
+          <h3 data-i18n="genQueueTitle">キュー</h3>
+          <span class="gen-count" id="genQueueCount"></span>
+          <span class="spacer"></span>
+          <button class="iconbtn" id="genDelSel" type="button" data-i18n="genDeleteSel" hidden>選択を削除</button>
+          <button class="iconbtn" id="genRefresh" type="button" data-i18n="genRefresh">更新</button>
+          <button class="iconbtn" id="genClear" type="button" data-i18n="genClearAll">全消去</button>
+        </div>
+        <div class="gen-note" data-i18n="genClearNote">全消去は待機中のみ（実行中は含まれません）</div>
+        <div id="genQueueList"><div class="empty" data-i18n="loading">読み込み中…</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- 画师 / 画师库 共享区域（含共享右侧画师串栏） -->
@@ -1687,7 +1714,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1798,7 +1825,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2145,6 +2172,79 @@ function setMode(m){
     if(typeof genOnShow === "function") genOnShow();
   }
 }
+// ---------- Generate: queue panel ----------
+let GEN_Q_TIMER = null;
+const GEN_Q_SEL = new Set();
+function genOnShow(){
+  genQueueRefresh();
+  if(!GEN_Q_TIMER){
+    GEN_Q_TIMER = setInterval(()=>{ if(CUR_VIEW === "gen" && !document.hidden) genQueueRefresh(); }, 4000);
+  }
+}
+async function genQueueRefresh(){
+  const list = $("genQueueList");
+  if(!list) return;
+  try{
+    const r = await api("/api/queue");
+    if(!r || !r.ok) throw new Error((r && r.error) || "queue fetch failed");
+    genQueueRender(r);
+  }catch(e){
+    list.innerHTML = '<div class="empty">' + esc(String((e && e.message) || e)) + '</div>';
+  }
+}
+function genQueueRender(r){
+  const run = r.running || [], pen = r.pending || [];
+  if($("genQueueCount")) $("genQueueCount").textContent = t("genRunning") + " " + run.length + " · " + t("genPending") + " " + pen.length;
+  const pendIds = new Set(pen.map(x=>x.prompt_id));
+  [...GEN_Q_SEL].forEach(id=>{ if(!pendIds.has(id)) GEN_Q_SEL.delete(id); });
+  if($("genDelSel")) $("genDelSel").hidden = GEN_Q_SEL.size === 0;
+  let h = "";
+  run.forEach(it=>{
+    h += '<div class="gq-row run"><span class="gq-badge">' + esc(t("genRunning")) + '</span><span class="gq-pos">' + esc(it.positive || String(it.prompt_id).slice(0, 8)) + '</span><button class="iconbtn gq-int" type="button">' + esc(t("genInterrupt")) + '</button></div>';
+  });
+  pen.forEach((it, i)=>{
+    const chk = GEN_Q_SEL.has(it.prompt_id) ? " checked" : "";
+    h += '<div class="gq-row"><label class="gq-chk"><input type="checkbox" data-qid="' + it.prompt_id + '"' + chk + '></label><span class="gq-num">' + (i + 1) + '</span><span class="gq-pos">' + esc(it.positive || String(it.prompt_id).slice(0, 8)) + '</span><button class="iconbtn gq-front" data-qid="' + it.prompt_id + '" type="button">' + esc(t("genFront")) + '</button><button class="iconbtn gq-del" data-qid="' + it.prompt_id + '" type="button">✕</button></div>';
+  });
+  if(!run.length && !pen.length) h = '<div class="empty">' + esc(t("genQueueEmpty")) + '</div>';
+  const list = $("genQueueList");
+  list.innerHTML = h;
+  list.querySelectorAll(".gq-front").forEach(b=>{ b.onclick = ()=>genQueueFront(b.dataset.qid); });
+  list.querySelectorAll(".gq-del").forEach(b=>{ b.onclick = ()=>genQueueDelete([b.dataset.qid]); });
+  list.querySelectorAll(".gq-int").forEach(b=>{ b.onclick = ()=>genQueueInterrupt(); });
+  list.querySelectorAll("input[type=checkbox][data-qid]").forEach(c=>{ c.onchange = ()=>{ if(c.checked) GEN_Q_SEL.add(c.dataset.qid); else GEN_Q_SEL.delete(c.dataset.qid); if($("genDelSel")) $("genDelSel").hidden = GEN_Q_SEL.size === 0; }; });
+}
+async function genQueueFront(pid){
+  try{
+    await api("/api/queue/front", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({prompt_id: pid})});
+  }catch(e){ console.warn("queue front failed", e); }
+  genQueueRefresh();
+}
+async function genQueueDelete(ids){
+  if(!ids || !ids.length) return;
+  try{
+    await fetch("/queue", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({delete: ids})});
+  }catch(e){ console.warn("queue delete failed", e); }
+  ids.forEach(id=>GEN_Q_SEL.delete(id));
+  genQueueRefresh();
+}
+async function genQueueClear(){
+  if(!confirm(t("genClearConfirm"))) return;
+  try{
+    await fetch("/queue", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({clear: true})});
+  }catch(e){ console.warn("queue clear failed", e); }
+  GEN_Q_SEL.clear();
+  genQueueRefresh();
+}
+async function genQueueInterrupt(){
+  if(!confirm(t("genInterruptConfirm"))) return;
+  try{ await fetch("/interrupt", {method: "POST"}); }catch(e){ console.warn("interrupt failed", e); }
+  genQueueRefresh();
+}
+if($("genRefresh")) $("genRefresh").onclick = ()=>genQueueRefresh();
+if($("genClear")) $("genClear").onclick = ()=>genQueueClear();
+if($("genDelSel")) $("genDelSel").onclick = ()=>genQueueDelete([...GEN_Q_SEL]);
+
 function setGalDrawerOpen(open){
   const dr = $("galDrawer"), btn = $("btnGalMenu");
   if(!dr || !btn) return;
