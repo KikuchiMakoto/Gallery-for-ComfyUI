@@ -33,7 +33,7 @@ except ImportError:
 
 BASE = "https://danbooru.donmai.us"
 LIMIT = 1000
-HEADERS = {"User-Agent": "Gallery4ComfyUI-artist-db-builder/1.0"}
+HEADERS = {"User-Agent": "Comfinder-artist-db-builder/1.0"}
 
 
 class RateLimiter:

@@ -1,19 +1,19 @@
 [project]
-name = "gallery4comfyui"
-version = "1.3.4"
-description = "Dual-source image gallery for ComfyUI: browse, search and filter ComfyUI & Stable Diffusion WebUI outputs, with artist gallery, artist database, favorites and advanced tag search."
+name = "comfinder"
+version = "2.0.0"
+description = "Tinder-style swipe triage and high-speed gallery WebApp for ComfyUI."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [{ name = "ainghhh" }]
-keywords = ["comfyui", "gallery", "sd-webui", "image-browser"]
+keywords = ["comfyui", "comfinder", "gallery", "image-browser"]
 
 [project.urls]
 Repository = "https://github.com/ainghhh/Gallery-for-ComfyUI"
 
 [tool.comfy]
 PublisherId = "ainghhh"
-DisplayName = "Gallery4ComfyUI"
-Description = "Dual-source image gallery for ComfyUI: browse, search and filter ComfyUI & Stable Diffusion WebUI outputs, with artist gallery, artist database, favorites and advanced tag search."
+DisplayName = "Comfinder"
+Description = "Tinder-style swipe triage and high-speed gallery WebApp for ComfyUI."
 Icon = ""
 Tags = ["gallery", "image", "utilities"]
