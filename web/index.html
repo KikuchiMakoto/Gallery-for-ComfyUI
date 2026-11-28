@@ -2093,6 +2093,8 @@ function tl(s){
   const one = x => MAP[x] || x;
   return String(s).split(" · ").map(part=>part.split("/").map(one).join(" / ")).join(" · ");
 }
+const MODE_ORDER = ["swipe", "gview", "gen"];
+const MODE_LABEL = {swipe: "SWipe", gview: "GView", gen: "Generate"};
 function applyLang(){
   document.querySelectorAll("[data-i18n]").forEach(el=>{
     const k = el.dataset.i18n;
@@ -2229,8 +2231,6 @@ if(window.visualViewport){
 // ---------- Tab & ビュー切替 ----------
 var _sideCurTop = null;
 var _sideRaf = null;
-const MODE_ORDER = ["swipe", "gview", "gen"];
-const MODE_LABEL = {swipe: "SWipe", gview: "GView", gen: "Generate"};
 function curMode(){
   return CUR_VIEW === "swipe" ? "swipe" : (CUR_VIEW === "gen" ? "gen" : "gview");
 }
