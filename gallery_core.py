@@ -1132,6 +1132,112 @@ def prompt_use(pid):
 
 
 # ---------------------------------------------------------------------------
+# Recipes (imported ComfyChair workflows) & prompt graph building
+# ---------------------------------------------------------------------------
+RECIPES_FILE = os.path.join(USERDATA, "recipes.json")
+_recipes_cache = None
+_recipes_lock = threading.RLock()
+
+
+def load_recipes():
+    global _recipes_cache
+    with _recipes_lock:
+        if _recipes_cache is None:
+            try:
+                with open(RECIPES_FILE, encoding="utf-8") as f:
+                    raw = json.load(f)
+                _recipes_cache = [it for it in raw if isinstance(it, dict) and it.get("id")] if isinstance(raw, list) else []
+            except Exception:
+                _recipes_cache = []
+        return [dict(it) for it in _recipes_cache]
+
+
+def get_recipe(rid):
+    for r in load_recipes():
+        if r.get("id") == rid:
+            return r
+    return None
+
+
+def recipe_list():
+    out = []
+    for r in load_recipes():
+        v = r.get("values") or {}
+        out.append({"id": r["id"], "name": r.get("name") or r["id"],
+                    "steps": v.get("steps"), "cfg": v.get("cfg"),
+                    "sampler": v.get("sampler_name"), "scheduler": v.get("scheduler"),
+                    "width": v.get("width"), "height": v.get("height"),
+                    "negative": v.get("negative_prompt") or "",
+                    "loras": [x.get("name") for x in (r.get("loras") or [])]})
+    return {"recipes": out}
+
+
+def _inject_loras(graph, loras):
+    unet_id = clip_id = None
+    for nid, node in graph.items():
+        ct = node.get("class_type")
+        if ct == "UNETLoader":
+            unet_id = nid
+        elif ct == "CLIPLoader":
+            clip_id = nid
+    if unet_id is None or clip_id is None:
+        return graph
+    used = [int(n) for n in graph if str(n).isdigit()]
+    next_id = (max(used) + 1) if used else 1
+    model_src = [unet_id, 0]
+    clip_src = [clip_id, 0]
+    for lora in loras:
+        lid = str(next_id)
+        next_id += 1
+        graph[lid] = {"class_type": "LoraLoader", "inputs": {
+            "model": list(model_src), "clip": list(clip_src),
+            "lora_name": lora.get("name"),
+            "strength_model": float(lora.get("strength", 1)),
+            "strength_clip": float(lora.get("strength", 1))}}
+        model_src = [lid, 0]
+        clip_src = [lid, 1]
+    for nid, node in graph.items():
+        if node.get("class_type") == "LoraLoader":
+            continue
+        inp = node.get("inputs") or {}
+        for k, v in inp.items():
+            if isinstance(v, list) and len(v) == 2:
+                if v[0] == unet_id and v[1] == 0:
+                    inp[k] = list(model_src)
+                elif v[0] == clip_id and v[1] == 0:
+                    inp[k] = list(clip_src)
+    return graph
+
+
+def build_prompt(recipe, positive=None, negative=None, seed=None, steps=None, width=None, height=None):
+    import copy
+    vals = dict(recipe.get("values") or {})
+    if positive is not None:
+        vals["positive_prompt"] = positive
+    if negative is not None:
+        vals["negative_prompt"] = negative
+    if seed is not None:
+        vals["seed"] = seed
+    if steps is not None:
+        vals["steps"] = steps
+    if width is not None:
+        vals["width"] = width
+    if height is not None:
+        vals["height"] = height
+    graph = copy.deepcopy(recipe.get("nodes") or {})
+    for node in graph.values():
+        inp = node.get("inputs") or {}
+        for k, v in list(inp.items()):
+            if isinstance(v, str) and v.startswith("{{") and v.endswith("}}"):
+                key = v[2:-2]
+                if key in vals:
+                    inp[k] = vals[key]
+    if recipe.get("loras"):
+        _inject_loras(graph, recipe["loras"])
+    return graph
+
+
+# ---------------------------------------------------------------------------
 # リアルタイム WebSocket 通知 & 出力ディレクトリ監視
 # ---------------------------------------------------------------------------
 _ws_clients = {}  # cid -> (loop, asyncio.Queue)

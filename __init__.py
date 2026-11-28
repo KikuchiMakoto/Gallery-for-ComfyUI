@@ -373,6 +373,67 @@ async def api_queue_shuffle_undo(request):
     PromptServer.instance.queue_updated()
     return _json({"ok": True, "restored": restored})
 
+async def _submit_prompt(graph, front=False):
+    import execution as _exec
+    import uuid as _uuid
+    srv = PromptServer.instance
+    prompt_id = str(_uuid.uuid4())
+    valid = await _exec.validate_prompt(prompt_id, graph, None)
+    if not valid[0]:
+        return {"ok": False, "error": str(valid[1]), "node_errors": valid[3]}
+    number = srv.number
+    if front:
+        number = -number
+    srv.number += 1
+    extra_data = {"create_time": int(time.time() * 1000)}
+    srv.prompt_queue.put((number, prompt_id, graph, extra_data, valid[2], {}))
+    return {"ok": True, "prompt_id": prompt_id, "number": number}
+
+
+@PromptServer.instance.routes.get(P + "/api/recipes")
+async def api_recipes(request):
+    try:
+        return _json(G.recipe_list())
+    except Exception as e:
+        return _json({"recipes": [], "error": str(e)})
+
+
+@PromptServer.instance.routes.post(P + "/api/generate")
+async def api_generate(request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    data = data or {}
+    recipe = G.get_recipe(data.get("recipe_id", ""))
+    if recipe is None:
+        return _json({"ok": False, "error": "recipe not found"}, 400)
+    try:
+        count = max(1, min(500, int(data.get("count") or 1)))
+        steps = int(data["steps"]) if data.get("steps") else None
+        width = int(data["width"]) if data.get("width") else None
+        height = int(data["height"]) if data.get("height") else None
+        fixed_seed = data.get("seed")
+        fixed_seed = int(fixed_seed) if (fixed_seed is not None and fixed_seed != "") else None
+    except Exception:
+        return _json({"ok": False, "error": "invalid numeric field"}, 400)
+    front = bool(data.get("front"))
+    order = list(range(count))
+    if front:
+        order.reverse()
+    ids = []
+    for i in order:
+        seed_i = (fixed_seed + i) if fixed_seed is not None else random.randint(0, 2**63 - 1)
+        graph = G.build_prompt(recipe, positive=data.get("positive") or "",
+                                negative=data.get("negative"), seed=seed_i,
+                                steps=steps, width=width, height=height)
+        r = await _submit_prompt(graph, front=front)
+        if not r.get("ok"):
+            return _json({"ok": False, "error": r.get("error"), "node_errors": r.get("node_errors"), "submitted": len(ids)}, 400)
+        ids.append(r["prompt_id"])
+    return _json({"ok": True, "prompt_ids": ids, "count": len(ids)})
+
+
 @PromptServer.instance.routes.get(P + "/api/prompts")
 async def api_prompts(request):
     try:

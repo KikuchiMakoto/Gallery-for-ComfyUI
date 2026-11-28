@@ -145,6 +145,10 @@
   .glib-main{flex:1; min-width:0; cursor:pointer}
   .glib-name{font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .glib-pos{font-size:11.5px; color: var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .gen-box{margin-top:10px; border-top:1px solid var(--line); padding-top:6px}
+  .gen-grid{display:grid; grid-template-columns:1fr 1fr; gap:0 10px}
+  .gen-actions{display:flex; gap:8px; margin-top:10px}
+  .iconbtn.primary{background: var(--acc); color:#fff; border-color:transparent; font-weight:700}
 
   .tb-util{margin-left: auto; display: flex; align-items: center; gap: 6px}
   .iconbtn{
@@ -1346,6 +1350,20 @@
         <label class="gen-lbl" data-i18n="genNegative">Negative</label>
         <textarea id="genNeg" class="gen-text" rows="3"></textarea>
         <input id="genTags" class="gen-input" data-i18n-ph="genTagsPh" placeholder="タグ（カンマ区切り）">
+        <div class="gen-box">
+          <label class="gen-lbl" data-i18n="genRecipe">レシピ</label>
+          <select id="genRecipe" class="gen-input"></select>
+          <div class="gen-grid">
+            <label class="gen-lbl">Steps<input id="genSteps" type="number" class="gen-input" min="1" max="150"></label>
+            <label class="gen-lbl"><span data-i18n="genSize">サイズ</span><select id="genSize" class="gen-input"><option value="1024x1536">1024×1536</option><option value="1536x1024">1536×1024</option><option value="1024x1024">1024×1024</option><option value="832x1216">832×1216</option><option value="1216x832">1216×832</option><option value="896x1152">896×1152</option></select></label>
+            <label class="gen-lbl">Seed<input id="genSeed" type="number" class="gen-input" data-i18n-ph="genSeedPh" placeholder="ランダム"></label>
+            <label class="gen-lbl"><span data-i18n="genCount">枚数</span><input id="genCount" type="number" class="gen-input" value="1" min="1" max="500"></label>
+          </div>
+          <div class="gen-actions">
+            <button class="iconbtn primary" id="genSubmit" type="button" data-i18n="genSubmit">生成</button>
+            <button class="iconbtn" id="genSubmitFront" type="button" data-i18n="genSubmitFront">先頭で生成</button>
+          </div>
+        </div>
         <div class="gen-sec-head" style="margin-top:12px">
           <h3 data-i18n="genLibTitle">Prompt Library</h3>
           <span class="spacer"></span>
@@ -1749,7 +1767,7 @@
 // ---------- 国际化（中文 / English） ----------
 const I18N = {
   ja: {
-    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", subWebui: "WebUI 画像", subFav: "お気に入り",
+    title: "Comfinder", subSwipe: "スワイプ仕分け", subComfy: "ギャラリー", subGen: "生成", genQueueTitle: "キュー", genRunning: "実行中", genPending: "待機", genFront: "先頭へ", genInterrupt: "中断", genInterruptConfirm: "実行中のジョブを中断しますか？", genClearAll: "全消去", genClearConfirm: "待機中のジョブをすべて消去しますか？", genClearNote: "全消去は待機中のみ（実行中は含まれません）", genDeleteSel: "選択を削除", genRefresh: "更新", genQueueEmpty: "キューは空です", genShuffle: "シャッフル", genShuffleUndo: "元に戻す", genShuffleConfirm: "待機中の {n} 件をシャッフルしますか？", genPromptTitle: "プロンプト", genLibNew: "新規", genLibSave: "ライブラリに保存", genNamePh: "名前（ライブラリ保存用）", genPositive: "Positive", genNegative: "Negative", genCopy: "コピー", genTagsPh: "タグ（カンマ区切り）", genLibTitle: "Prompt Library", genFavOnly: "お気に入りのみ", genLibSearchPh: "検索（名前・本文・タグ）", genLibLoad: "読込", genLibDeleteConfirm: "このライブラリ項目を削除しますか？", genLibEmpty: "ライブラリは空です", genLibNeedName: "名前を入力してください", genRecipe: "レシピ", genSize: "サイズ", genCount: "枚数", genSubmit: "生成", genSubmitFront: "先頭で生成", genSubmitted: "{n}件投入しました", genSeedPh: "ランダム", subWebui: "WebUI 画像", subFav: "お気に入り",
     tabSwipe: "スワイプ", tabComfy: "ギャラリー", tabWebui: "WebUI", tabVideo: "動画", tabArtist: "絵師", tabFav: "お気に入り",
     tabArtlib: "絵師DB",
     bnSwipe: "スワイプ", bnGallery: "ギャラリー", bnArtist: "絵師", bnArtlib: "絵師DB", bnFav: "お気に入り",
@@ -1860,7 +1878,7 @@ const I18N = {
     trashLabel: "ゴミ箱", trashEmpty: "ゴミ箱を空にする", trashConfirm: "ゴミ箱の中身を完全に削除しますか？元に戻せません", trashDone: "ゴミ箱を空にしました",
   },
   en: {
-    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", subWebui: "WebUI Images", subFav: "Favorites",
+    title: "Comfinder", subSwipe: "Swipe Deck", subComfy: "Gallery", subGen: "Generate", genQueueTitle: "Queue", genRunning: "Running", genPending: "Pending", genFront: "To front", genInterrupt: "Interrupt", genInterruptConfirm: "Interrupt the running job?", genClearAll: "Clear all", genClearConfirm: "Delete all pending jobs?", genClearNote: "Clear affects pending jobs only (not the running job)", genDeleteSel: "Delete selected", genRefresh: "Refresh", genQueueEmpty: "Queue is empty", genShuffle: "Shuffle", genShuffleUndo: "Undo shuffle", genShuffleConfirm: "Shuffle all {n} pending jobs?", genPromptTitle: "Prompt", genLibNew: "New", genLibSave: "Save to library", genNamePh: "Name (for library save)", genPositive: "Positive", genNegative: "Negative", genCopy: "Copy", genTagsPh: "Tags (comma separated)", genLibTitle: "Prompt Library", genFavOnly: "Favorites only", genLibSearchPh: "Search (name, text, tags)", genLibLoad: "Load", genLibDeleteConfirm: "Delete this library entry?", genLibEmpty: "Library is empty", genLibNeedName: "Enter a name first", genRecipe: "Recipe", genSize: "Size", genCount: "Count", genSubmit: "Generate", genSubmitFront: "Generate at front", genSubmitted: "Queued {n} job(s)", genSeedPh: "Random", subWebui: "WebUI Images", subFav: "Favorites",
     tabSwipe: "Swipe", tabComfy: "Gallery", tabWebui: "WebUI", tabVideo: "Videos", tabArtist: "Artists", tabFav: "Fav",
     tabArtlib: "Artists DB",
     bnSwipe: "Swipe", bnGallery: "Gallery", bnArtist: "Artists", bnArtlib: "DB", bnFav: "Favs",
@@ -2214,6 +2232,7 @@ const GEN_Q_SEL = new Set();
 function genOnShow(){
   genQueueRefresh();
   genLibLoad();
+  genRecipesLoad();
   if(!GEN_Q_TIMER){
     GEN_Q_TIMER = setInterval(()=>{ if(CUR_VIEW === "gen" && !document.hidden) genQueueRefresh(); }, 4000);
   }
@@ -2299,6 +2318,66 @@ async function genQueueShuffleUndo(){
   }catch(e){ console.warn("queue shuffle undo failed", e); }
   genQueueRefresh();
 }
+
+// ---------- Generate: recipes & submit ----------
+let GEN_RECIPES = [];
+let GEN_RECIPE_CUR = null;
+async function genRecipesLoad(){
+  const sel = $("genRecipe");
+  if(!sel) return;
+  try{
+    const r = await api("/api/recipes");
+    GEN_RECIPES = (r && r.recipes) || [];
+    sel.innerHTML = GEN_RECIPES.map(x=>'<option value="' + x.id + '">' + esc(x.name) + '</option>').join("");
+    if(GEN_RECIPE_CUR){
+      sel.value = GEN_RECIPE_CUR.id;
+    }else if(GEN_RECIPES.length){
+      sel.value = GEN_RECIPES[0].id;
+      genRecipeApply();
+    }
+  }catch(e){ console.warn("recipes load failed", e); }
+}
+function genRecipeApply(){
+  const sel = $("genRecipe");
+  const r = GEN_RECIPES.find(x=>x.id === (sel && sel.value));
+  if(!r) return;
+  GEN_RECIPE_CUR = r;
+  if($("genSteps")) $("genSteps").value = r.steps || "";
+  if($("genSize") && r.width && r.height){
+    const v = r.width + "x" + r.height;
+    const sz = $("genSize");
+    if([...sz.options].some(o=>o.value === v)) sz.value = v;
+  }
+  if($("genNeg")) $("genNeg").value = r.negative || "";
+}
+async function genSubmit(front){
+  const r = GEN_RECIPE_CUR;
+  if(!r) return;
+  const size = (($("genSize") && $("genSize").value) || "1024x1536").split("x");
+  const seedTxt = (($("genSeed") && $("genSeed").value) || "").trim();
+  const body = {
+    recipe_id: r.id,
+    positive: $("genPos") ? $("genPos").value : "",
+    negative: $("genNeg") ? $("genNeg").value : "",
+    steps: ($("genSteps") && $("genSteps").value) ? Number($("genSteps").value) : null,
+    width: Number(size[0]), height: Number(size[1]),
+    seed: seedTxt === "" ? null : Number(seedTxt),
+    count: ($("genCount") && $("genCount").value) ? Number($("genCount").value) : 1,
+    front: !!front
+  };
+  try{
+    const res = await api("/api/generate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    if(res && res.ok){
+      showToast(t("genSubmitted").replace("{n}", String(res.count)));
+      genQueueRefresh();
+    }else{
+      alert((res && res.error) || "error");
+    }
+  }catch(e){ alert(String((e && e.message) || e)); }
+}
+if($("genRecipe")) $("genRecipe").addEventListener("change", ()=>genRecipeApply());
+if($("genSubmit")) $("genSubmit").onclick = ()=>genSubmit(false);
+if($("genSubmitFront")) $("genSubmitFront").onclick = ()=>genSubmit(true);
 
 // ---------- Generate: Prompt Library ----------
 let GEN_LIB_ID = null;
